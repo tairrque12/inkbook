@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { transition, VALID_TRANSITIONS } from './booking-state-machine'
-import type { BookingStatus } from '@/types/booking'
+import { transition } from './booking-state-machine'
 
 describe('BookingStateMachine', () => {
   describe('valid transitions', () => {

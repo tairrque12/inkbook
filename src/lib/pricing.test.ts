@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calculatePriceEstimate, PRICING_MATRIX } from './pricing'
+import { calculatePriceEstimate } from './pricing'
 import type { TattooSize, TattooPlacement } from '@/types/booking'
 
 describe('calculatePriceEstimate', () => {
