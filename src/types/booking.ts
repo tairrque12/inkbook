@@ -18,7 +18,7 @@ export interface BookingSlot {
   startsAt: Date
   endsAt: Date
   status: SlotStatus
-  heldUntil?: Date
+  heldUntil?: Date | null
 }
 
 export interface BookingSession {
