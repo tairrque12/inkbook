@@ -61,6 +61,13 @@ describe('CalendarService', () => {
       await expect(service.getAvailableSlots()).rejects.toThrow(CalendarAuthError)
     })
 
+    it('re-throws non-auth errors without wrapping them', async () => {
+      const networkErr = new Error('ECONNREFUSED')
+      googleClient.listEvents.mockRejectedValue(networkErr)
+
+      await expect(service.getAvailableSlots()).rejects.toThrow('ECONNREFUSED')
+    })
+
     it('blocks new slot lookups after CalendarAuthError until re-authed', async () => {
       googleClient.listEvents.mockRejectedValue({ code: 401, message: 'Token expired' })
 
@@ -101,6 +108,19 @@ describe('CalendarService', () => {
         startsAt: new Date(),
         endsAt: new Date(),
       })).rejects.toThrow(CalendarAuthError)
+    })
+
+    it('re-throws non-auth errors from createEvent without wrapping them', async () => {
+      const quotaErr = new Error('quota exceeded')
+      googleClient.createEvent.mockRejectedValue(quotaErr)
+
+      await expect(service.writeBookingToCalendar({
+        sessionId: 'session-1',
+        customerEmail: 'cust@example.com',
+        placement: 'arm',
+        startsAt: new Date(),
+        endsAt: new Date(),
+      })).rejects.toThrow('quota exceeded')
     })
   })
 
