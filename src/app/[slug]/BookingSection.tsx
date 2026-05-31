@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { getMonthDays, getFirstDayOfWeek } from "@/lib/mock-calendar";
 import type { DayStatus } from "@/lib/mock-calendar";
+import { validateImageFiles, MAX_IMAGES } from "@/lib/image-utils";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -97,6 +98,11 @@ export function BookingSection({ artistSlug }: { artistSlug: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitState, setSubmitState] = useState<"idle" | "success" | "error">("idle");
 
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [payLoading, setPayLoading] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
@@ -118,20 +124,72 @@ export function BookingSection({ artistSlug }: { artistSlug: string }) {
     }
   }
 
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    const combined = [...images, ...files];
+    const error = validateImageFiles(combined.map((f) => ({ name: f.name, type: f.type, size: f.size })));
+    if (error) {
+      setImageError(error);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    setImageError(null);
+    setImages(combined);
+    const newPreviews = files.map((f) => URL.createObjectURL(f));
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
+  }
+
+  function removeImage(index: number) {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setSubmitState("idle");
     try {
+      const imagePayloads = await Promise.all(
+        images.map(async (file) => ({
+          name: file.name,
+          type: file.type,
+          data: await fileToBase64(file),
+        }))
+      );
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, preferredDate: selectedDate }),
+        body: JSON.stringify({
+          ...form,
+          preferredDate: selectedDate,
+          images: imagePayloads,
+        }),
       });
       if (!res.ok) throw new Error("Failed");
       setSubmitState("success");
       setForm({ name: "", email: "", phone: "", idea: "", budget: "", message: "" });
       setSelectedDate(null);
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+      setImages([]);
+      setImagePreviews([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch {
       setSubmitState("error");
     } finally {
@@ -327,6 +385,59 @@ export function BookingSection({ artistSlug }: { artistSlug: string }) {
                   onChange={(e) => setForm({ ...form, message: e.target.value })}
                   className="resize-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
+                  Reference Images{" "}
+                  <span className="normal-case tracking-normal text-[#555]">
+                    (optional · up to 3 · JPEG or PNG · 5MB each)
+                  </span>
+                </label>
+
+                {imagePreviews.length > 0 && (
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {imagePreviews.map((src, i) => (
+                      <div key={i} className="relative">
+                        <img
+                          src={src}
+                          alt={`Reference ${i + 1}`}
+                          className="w-20 h-20 object-cover rounded border border-border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(i)}
+                          aria-label={`Remove image ${i + 1}`}
+                          className="absolute -top-2 -right-2 w-5 h-5 bg-[#333] text-cream rounded-full flex items-center justify-center text-xs leading-none hover:bg-red-800 transition-colors"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {images.length < MAX_IMAGES && (
+                  <label className="flex items-center justify-center gap-2 h-11 px-4 border border-dashed border-border rounded cursor-pointer text-muted text-sm hover:border-[#444] hover:text-cream transition-colors">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                      <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    Add {images.length > 0 ? "another" : "a"} reference image
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      multiple
+                      capture={undefined}
+                      className="sr-only"
+                      onChange={handleImageChange}
+                    />
+                  </label>
+                )}
+
+                {imageError && (
+                  <p className="text-red-400 text-xs mt-1.5">{imageError}</p>
+                )}
               </div>
 
               {submitState === "error" && (

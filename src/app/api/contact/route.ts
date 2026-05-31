@@ -1,11 +1,32 @@
 import { Resend } from "resend";
+import {
+  validateImageFiles,
+  shouldEmbedInline,
+  buildInlineImageHtml,
+  buildImageAttachments,
+} from "@/lib/image-utils";
+import type { ImagePayload } from "@/lib/image-utils";
 
 export async function POST(req: Request) {
   const body = await req.json();
   const { name, email, phone, idea, preferredDate, budget, message } = body;
+  const images: ImagePayload[] = Array.isArray(body.images) ? body.images : [];
 
   if (!name || !email || !idea) {
     return Response.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  if (images.length > 0) {
+    const imageError = validateImageFiles(
+      images.map((img) => ({
+        name: img.name,
+        type: img.type,
+        size: Math.round(img.data.length * 0.75),
+      }))
+    );
+    if (imageError) {
+      return Response.json({ error: imageError }, { status: 400 });
+    }
   }
 
   const artistEmail = process.env.ARTIST_EMAIL;
@@ -23,6 +44,16 @@ export async function POST(req: Request) {
 
   const resend = new Resend(apiKey);
 
+  const embedInline = images.length > 0 && shouldEmbedInline(images);
+  const inlineHtml = embedInline ? buildInlineImageHtml(images) : "";
+  const attachments = !embedInline && images.length > 0 ? buildImageAttachments(images) : [];
+  const imageSection =
+    images.length === 0
+      ? ""
+      : embedInline
+        ? `<p><strong>Reference Images:</strong></p>${inlineHtml}`
+        : `<p><strong>Reference Images:</strong> ${images.length} image${images.length > 1 ? "s" : ""} attached.</p>`;
+
   try {
     await resend.emails.send({
       from: "inkbook <noreply@ink-book.com>",
@@ -38,8 +69,10 @@ export async function POST(req: Request) {
           <p><strong>Preferred Date:</strong> ${preferredDate}</p>
           <p><strong>Budget:</strong> ${budget}</p>
           <p><strong>Message:</strong> ${message}</p>
+          ${imageSection}
         </div>
       `,
+      ...(attachments.length > 0 && { attachments }),
     });
   } catch (err) {
     console.error("[inkbook] Resend error:", err);
