@@ -1,9 +1,15 @@
 import type { BookingSlot, TattooPlacement } from '@/types/booking'
 
 export class CalendarAuthError extends Error {
-  constructor(message = 'Google Calendar authentication failed — reconnect required') {
+  readonly reconnectUrl: string | undefined
+
+  constructor(
+    message = 'Google Calendar authentication failed — reconnect required',
+    reconnectUrl?: string,
+  ) {
     super(message)
     this.name = 'CalendarAuthError'
+    this.reconnectUrl = reconnectUrl
   }
 }
 
