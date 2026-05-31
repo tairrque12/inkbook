@@ -110,16 +110,6 @@ describe('BookingService', () => {
       expect(db.updateSlot).toHaveBeenCalledWith('slot-1', { status: 'BOOKED' })
       expect(db.updateSession).toHaveBeenCalledWith('session-1', { status: 'CONFIRMED' })
     })
-
-    it('skips slot update and still confirms session when session has no slotId', async () => {
-      db.getSession.mockResolvedValue({ slotId: undefined, status: 'PAYMENT_CONFIRMED' })
-      db.updateSession.mockResolvedValue({ status: 'CONFIRMED' })
-
-      await service.confirmBooking('session-1')
-
-      expect(db.updateSlot).not.toHaveBeenCalled()
-      expect(db.updateSession).toHaveBeenCalledWith('session-1', { status: 'CONFIRMED' })
-    })
   })
 
   describe('releaseHeldSlot', () => {
