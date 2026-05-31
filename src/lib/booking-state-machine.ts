@@ -1,25 +1,18 @@
 import type { BookingStatus } from '@/types/booking'
 
 type BookingEvent =
-  | 'START_VISUALIZE'
   | 'SELECT_SIZE_PLACEMENT'
   | 'SELECT_SLOT'
   | 'INITIATE_PAYMENT'
   | 'CONFIRM_PAYMENT'
   | 'COMPLETE'
   | 'PAYMENT_FAILED'
-  | 'VISUALIZER_FAILED'
 
 type TransitionMap = Partial<Record<BookingEvent, BookingStatus>>
 
 export const VALID_TRANSITIONS: Record<BookingStatus, TransitionMap> = {
   BROWSING: {
-    START_VISUALIZE: 'VISUALIZING',
     SELECT_SIZE_PLACEMENT: 'SIZE_PLACEMENT_SELECTED',
-  },
-  VISUALIZING: {
-    SELECT_SIZE_PLACEMENT: 'SIZE_PLACEMENT_SELECTED',
-    VISUALIZER_FAILED: 'SIZE_PLACEMENT_SELECTED',
   },
   SIZE_PLACEMENT_SELECTED: {
     SELECT_SLOT: 'SLOT_SELECTED',

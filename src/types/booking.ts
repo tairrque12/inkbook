@@ -1,6 +1,5 @@
 export type BookingStatus =
   | 'BROWSING'
-  | 'VISUALIZING'
   | 'SIZE_PLACEMENT_SELECTED'
   | 'SLOT_SELECTED'
   | 'PAYMENT_INITIATED'

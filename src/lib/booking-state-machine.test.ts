@@ -3,16 +3,8 @@ import { transition } from './booking-state-machine'
 
 describe('BookingStateMachine', () => {
   describe('valid transitions', () => {
-    it('transitions BROWSING → VISUALIZING', () => {
-      expect(transition('BROWSING', 'START_VISUALIZE')).toBe('VISUALIZING')
-    })
-
-    it('transitions BROWSING → SIZE_PLACEMENT_SELECTED (skip visualizer)', () => {
+    it('transitions BROWSING → SIZE_PLACEMENT_SELECTED', () => {
       expect(transition('BROWSING', 'SELECT_SIZE_PLACEMENT')).toBe('SIZE_PLACEMENT_SELECTED')
-    })
-
-    it('transitions VISUALIZING → SIZE_PLACEMENT_SELECTED', () => {
-      expect(transition('VISUALIZING', 'SELECT_SIZE_PLACEMENT')).toBe('SIZE_PLACEMENT_SELECTED')
     })
 
     it('transitions SIZE_PLACEMENT_SELECTED → SLOT_SELECTED', () => {
@@ -35,10 +27,6 @@ describe('BookingStateMachine', () => {
   describe('failure paths', () => {
     it('transitions PAYMENT_INITIATED → SLOT_SELECTED on payment failure (slot released)', () => {
       expect(transition('PAYMENT_INITIATED', 'PAYMENT_FAILED')).toBe('SLOT_SELECTED')
-    })
-
-    it('transitions VISUALIZING → SIZE_PLACEMENT_SELECTED on GPT-4o failure', () => {
-      expect(transition('VISUALIZING', 'VISUALIZER_FAILED')).toBe('SIZE_PLACEMENT_SELECTED')
     })
   })
 
