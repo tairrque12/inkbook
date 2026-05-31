@@ -29,7 +29,7 @@ export interface GoogleClient {
   }): Promise<{ id: string }>
 }
 
-interface WriteBookingInput {
+export interface WriteBookingInput {
   sessionId: string
   customerEmail: string
   placement: TattooPlacement
