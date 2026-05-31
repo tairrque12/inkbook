@@ -25,6 +25,8 @@ export default defineConfig({
         'src/tests/**',
         'src/**/*.d.ts',
         'src/app/**',
+        'src/types/**',
+        'src/lib/mock-artists.ts',
         'src/**/*.test.ts',
         'src/**/*.test.tsx',
         'src/**/*.integration.test.ts',
