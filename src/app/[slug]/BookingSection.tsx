@@ -11,13 +11,6 @@ const MONTH_NAMES = [
 ];
 const DAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-const BUDGET_OPTIONS = [
-  "Under $300",
-  "$300 – $600",
-  "$600 – $1,200",
-  "$1,200 – $2,500",
-  "$2,500+",
-];
 
 function statusStyle(status: DayStatus, selected: boolean): string {
   if (selected) return "bg-gold text-black font-semibold cursor-pointer";
@@ -359,19 +352,14 @@ export function BookingSection({ artistSlug }: { artistSlug: string }) {
 
               <div>
                 <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
-                  Budget Range
+                  Budget (optional)
                 </label>
-                <select
+                <input
+                  type="text"
+                  placeholder="e.g. $500, around $1,000, flexible"
                   value={form.budget}
                   onChange={(e) => setForm({ ...form, budget: e.target.value })}
-                >
-                  <option value="">Select a range</option>
-                  {BUDGET_OPTIONS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>
