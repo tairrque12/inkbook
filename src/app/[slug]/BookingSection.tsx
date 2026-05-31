@@ -278,7 +278,7 @@ export function BookingSection({ artistSlug }: { artistSlug: string }) {
       <section className="border-t border-border py-20 px-6 bg-card">
         <div className="max-w-2xl mx-auto">
           <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Get in touch</p>
-          <h2 className="text-3xl font-light text-cream mb-2">Book a Consultation</h2>
+          <h2 className="text-3xl font-light text-cream mb-2">Book a Free Consultation Today!</h2>
           <p className="text-muted text-sm mb-10">
             Tell me about your idea. I&apos;ll get back to you within 24 hours.
           </p>
