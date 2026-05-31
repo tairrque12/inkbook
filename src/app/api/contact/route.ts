@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
   try {
     await resend.emails.send({
-      from: "inkbook <onboarding@resend.dev>",
+      from: "inkbook <noreply@ink-book.com>",
       to: artistEmail,
       subject: `New consultation request from ${name}`,
       html: `
