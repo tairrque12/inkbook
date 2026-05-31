@@ -18,6 +18,15 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
       },
+      animation: {
+        carousel: "carousel 35s linear infinite",
+      },
+      keyframes: {
+        carousel: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+      },
     },
   },
   plugins: [],

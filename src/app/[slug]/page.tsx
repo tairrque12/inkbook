@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getArtist } from "@/lib/mock-artists";
 import { BookingSection } from "./BookingSection";
+import { PaymentCarousel } from "./PaymentCarousel";
 
 export default async function ArtistPage({
   params,
@@ -215,6 +216,8 @@ export default async function ArtistPage({
             All prices are estimates. Final cost depends on complexity, detail level, and placement.
             Deposits are applied to the total cost of your tattoo.
           </p>
+
+          <PaymentCarousel />
         </div>
       </section>
 
