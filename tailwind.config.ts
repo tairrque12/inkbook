@@ -19,7 +19,7 @@ const config: Config = {
         sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
       },
       animation: {
-        carousel: "carousel 35s linear infinite",
+        carousel: "carousel 20s linear infinite",
       },
       keyframes: {
         carousel: {
