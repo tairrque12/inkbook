@@ -31,15 +31,13 @@ export async function POST(req: Request) {
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #000; color: #F5F0E8;">
           <h2 style="color: #C9A96E; margin-top: 0;">New Consultation Request</h2>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr><td style="padding: 8px 0; color: #6B6560; width: 140px;">Name</td><td>${name}</td></tr>
-            <tr><td style="padding: 8px 0; color: #6B6560;">Email</td><td>${email}</td></tr>
-            ${phone ? `<tr><td style="padding: 8px 0; color: #6B6560;">Phone</td><td>${phone}</td></tr>` : ""}
-            <tr><td style="padding: 8px 0; color: #6B6560;">Tattoo Idea</td><td>${idea}</td></tr>
-            ${preferredDate ? `<tr><td style="padding: 8px 0; color: #6B6560;">Preferred Date</td><td>${preferredDate}</td></tr>` : ""}
-            ${budget ? `<tr><td style="padding: 8px 0; color: #6B6560;">Budget</td><td>${budget}</td></tr>` : ""}
-            ${message ? `<tr><td style="padding: 8px 0; color: #6B6560;">Message</td><td>${message}</td></tr>` : ""}
-          </table>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+          <p><strong>Tattoo Idea:</strong> ${idea}</p>
+          <p><strong>Preferred Date:</strong> ${preferredDate}</p>
+          <p><strong>Budget:</strong> ${budget}</p>
+          <p><strong>Message:</strong> ${message}</p>
         </div>
       `,
     });
