@@ -5,6 +5,7 @@ import {
   GOOGLE_TOKEN_ENDPOINT,
   buildAuthUrl,
   exchangeCodeForTokens,
+  refreshAccessToken,
   getOAuthConfig,
   getReconnectUrl,
 } from './google-oauth'
@@ -207,5 +208,68 @@ describe('getReconnectUrl', () => {
     expect(getReconnectUrl('http://localhost:3000', 'artist-x')).toBe(
       'http://localhost:3000/api/auth/google/artist-x',
     )
+  })
+})
+
+// ── refreshAccessToken ─────────────────────────────────────────────────────
+
+describe('refreshAccessToken', () => {
+  const mockFetch = vi.fn()
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    mockFetch.mockReset()
+  })
+
+  function stubFetch(body: object, status = 200) {
+    vi.stubGlobal('fetch', mockFetch)
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(body), { status }),
+    )
+  }
+
+  it('POSTs to the Google token endpoint', async () => {
+    stubFetch({ access_token: 'at', expires_in: 3599, token_type: 'Bearer' })
+    await refreshAccessToken(mockConfig, 'rt_old')
+    expect(mockFetch).toHaveBeenCalledWith(GOOGLE_TOKEN_ENDPOINT, expect.objectContaining({ method: 'POST' }))
+  })
+
+  it('sends grant_type=refresh_token', async () => {
+    stubFetch({ access_token: 'at', expires_in: 3599, token_type: 'Bearer' })
+    await refreshAccessToken(mockConfig, 'rt_old')
+    const body = (mockFetch.mock.calls[0][1] as RequestInit).body as string
+    expect(body).toContain('grant_type=refresh_token')
+  })
+
+  it('sends the refresh token', async () => {
+    stubFetch({ access_token: 'at', expires_in: 3599, token_type: 'Bearer' })
+    await refreshAccessToken(mockConfig, 'my-refresh-token')
+    const body = (mockFetch.mock.calls[0][1] as RequestInit).body as string
+    expect(body).toContain('refresh_token=my-refresh-token')
+  })
+
+  it('sends client_id and client_secret', async () => {
+    stubFetch({ access_token: 'at', expires_in: 3599, token_type: 'Bearer' })
+    await refreshAccessToken(mockConfig, 'rt')
+    const body = (mockFetch.mock.calls[0][1] as RequestInit).body as string
+    expect(body).toContain('client_id=test-client-id')
+    expect(body).toContain('client_secret=test-client-secret')
+  })
+
+  it('returns the new access token and expiry', async () => {
+    stubFetch({ access_token: 'fresh_token', expires_in: 3599, token_type: 'Bearer' })
+    const result = await refreshAccessToken(mockConfig, 'rt')
+    expect(result.access_token).toBe('fresh_token')
+    expect(result.expires_in).toBe(3599)
+  })
+
+  it('throws when the token endpoint returns an error', async () => {
+    stubFetch({ error: 'invalid_grant' }, 400)
+    await expect(refreshAccessToken(mockConfig, 'expired-rt')).rejects.toThrow('Token refresh failed')
+  })
+
+  it('includes the Google error code in the thrown message', async () => {
+    stubFetch({ error: 'invalid_grant' }, 400)
+    await expect(refreshAccessToken(mockConfig, 'rt')).rejects.toThrow('invalid_grant')
   })
 })

@@ -13,13 +13,13 @@ export class CalendarAuthError extends Error {
   }
 }
 
-interface GoogleEvent {
+export interface GoogleEvent {
   id: string
   start: string
   end: string
 }
 
-interface GoogleClient {
+export interface GoogleClient {
   listEvents(): Promise<GoogleEvent[]>
   createEvent(event: {
     summary: string

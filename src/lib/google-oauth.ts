@@ -20,6 +20,13 @@ export interface TokenResponse {
   scope: string
 }
 
+export interface RefreshTokenResponse {
+  access_token: string
+  expires_in: number
+  token_type: string
+  scope?: string
+}
+
 export function getReconnectUrl(baseUrl: string, slug: string): string {
   return `${baseUrl}/api/auth/google/${slug}`
 }
@@ -58,6 +65,29 @@ export async function exchangeCodeForTokens(
   }
 
   return res.json() as Promise<TokenResponse>
+}
+
+export async function refreshAccessToken(
+  config: OAuthConfig,
+  refreshToken: string,
+): Promise<RefreshTokenResponse> {
+  const res = await fetch(GOOGLE_TOKEN_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+    }).toString(),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(`Token refresh failed: ${body.error ?? res.status}`)
+  }
+
+  return res.json() as Promise<RefreshTokenResponse>
 }
 
 export function getOAuthConfig(baseUrl: string): OAuthConfig {
