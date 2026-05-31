@@ -102,20 +102,11 @@ export default async function ArtistPage({
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, 33vw"
                   />
-                  <div className="absolute inset-0 flex items-end">
-                    <div className="w-full bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 group-hover:opacity-0 transition-opacity">
-                      <span className="text-[10px] text-gold tracking-widest uppercase block mb-1">
-                        {item.style}
-                      </span>
-                      <p className="text-cream text-sm font-medium">{item.title}</p>
-                      <p className="text-muted text-xs mt-0.5">{item.placement}</p>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Caption */}
                 <div className="pt-3 pb-1">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
                       <p className="text-cream text-sm font-medium leading-tight">{item.title}</p>
                       <p className="text-muted text-xs mt-0.5">{item.placement}</p>
@@ -124,7 +115,7 @@ export default async function ArtistPage({
                       {item.style}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2">
                     <span className="text-cream text-sm font-semibold">
                       ${item.cost.toLocaleString()}
                     </span>
