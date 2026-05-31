@@ -31,6 +31,7 @@ export interface GoogleClient {
 
 export interface WriteBookingInput {
   sessionId: string
+  artistId: string
   customerEmail: string
   placement: TattooPlacement
   startsAt: Date

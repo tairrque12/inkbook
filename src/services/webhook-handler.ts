@@ -61,6 +61,7 @@ export class WebhookHandler {
     if (slot) {
       const input: WriteBookingInput = {
         sessionId: session.id,
+        artistId: session.artistId,
         customerEmail: session.customerEmail,
         placement: session.placement,
         startsAt: slot.startsAt,

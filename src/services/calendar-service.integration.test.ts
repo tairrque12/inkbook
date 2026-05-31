@@ -78,6 +78,7 @@ describe('CalendarService', () => {
 
       await service.writeBookingToCalendar({
         sessionId: 'session-1',
+        artistId: 'artist-1',
         customerEmail: 'cust@example.com',
         placement: 'arm',
         startsAt: new Date('2026-06-01T10:00:00Z'),
@@ -96,6 +97,7 @@ describe('CalendarService', () => {
 
       await expect(service.writeBookingToCalendar({
         sessionId: 'session-1',
+        artistId: 'artist-1',
         customerEmail: 'cust@example.com',
         placement: 'arm',
         startsAt: new Date(),

@@ -2,6 +2,10 @@ import Stripe from 'stripe'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import { WebhookHandler } from '@/services/webhook-handler'
+import { CalendarService, CalendarAuthError } from '@/services/calendar-service'
+import { SupabaseVaultTokenStore } from '@/services/artist-token-store'
+import { makeCalendarClientForArtist } from '@/lib/calendar-client-factory'
+import { getOAuthConfig, getReconnectUrl } from '@/lib/google-oauth'
 import type { BookingSession, BookingSlot } from '@/types/booking'
 
 // ── dependency factories ───────────────────────────────────────────────────
@@ -93,11 +97,32 @@ export async function POST(req: Request) {
     },
     calendar: {
       async writeBookingToCalendar(input) {
-        // CalendarService requires a GoogleClient — wired separately once
-        // OAuth + token storage are fully operational; returning a no-op stub
-        // that is replaced at runtime by makeCalendarClientForArtist.
-        void input
-        return ''
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
+        let oauthConfig
+        try {
+          oauthConfig = getOAuthConfig(baseUrl)
+        } catch {
+          console.warn('[webhook] Google OAuth not configured — skipping calendar write')
+          return ''
+        }
+
+        const tokenStore = new SupabaseVaultTokenStore(supabase as never)
+        const googleClient = await makeCalendarClientForArtist(input.artistId, tokenStore, oauthConfig)
+        if (!googleClient) {
+          console.warn(`[webhook] No calendar token for artist ${input.artistId} — skipping calendar write`)
+          return ''
+        }
+
+        const calendarService = new CalendarService(googleClient, input.artistId)
+        try {
+          return await calendarService.writeBookingToCalendar(input)
+        } catch (err) {
+          if (err instanceof CalendarAuthError) {
+            const reconnectUrl = getReconnectUrl(baseUrl, input.artistId)
+            console.error(`[webhook] Calendar auth error for ${input.artistId}. Reconnect: ${reconnectUrl}`)
+          }
+          throw err
+        }
       },
     },
     mailer: {

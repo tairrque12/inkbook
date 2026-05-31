@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { WebhookHandler } from './webhook-handler'
 import type { WebhookHandlerConfig } from './webhook-handler'
 import type { BookingSession, BookingSlot } from '@/types/booking'
@@ -161,6 +161,7 @@ describe('WebhookHandler.handlePaymentIntentSucceeded', () => {
       expect(cfg.calendar.writeBookingToCalendar).toHaveBeenCalledWith(
         expect.objectContaining({
           sessionId: SESSION.id,
+          artistId: SESSION.artistId,
           customerEmail: SESSION.customerEmail,
           placement: SESSION.placement,
         }),
