@@ -74,7 +74,7 @@ function Calendar({
   );
 }
 
-export function BookingSection({ artistSlug }: { artistSlug: string }) {
+export function BookingSection() {
   const today = new Date("2026-05-30");
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth() + 1); // June
@@ -95,9 +95,6 @@ export function BookingSection({ artistSlug }: { artistSlug: string }) {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [payLoading, setPayLoading] = useState(false);
-  const [payError, setPayError] = useState<string | null>(null);
 
   function prevMonth() {
     if (calMonth === 0) {
@@ -187,28 +184,6 @@ export function BookingSection({ artistSlug }: { artistSlug: string }) {
       setSubmitState("error");
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function handlePayDeposit() {
-    setPayLoading(true);
-    setPayError(null);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ artistSlug }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        setPayError(data.error ?? "Something went wrong. Please try again.");
-        return;
-      }
-      window.location.href = data.url;
-    } catch {
-      setPayError("Unable to start checkout. Please try again.");
-    } finally {
-      setPayLoading(false);
     }
   }
 
@@ -446,39 +421,6 @@ export function BookingSection({ artistSlug }: { artistSlug: string }) {
         </div>
       </section>
 
-      {/* Stripe Deposit */}
-      <section className="border-t border-border py-20 px-6">
-        <div className="max-w-2xl mx-auto text-center">
-          <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Ready to commit?</p>
-          <h2 className="text-3xl font-light text-cream mb-4">Secure Your Slot</h2>
-          <p className="text-muted text-sm max-w-md mx-auto mb-2">
-            A <span className="text-cream font-medium">$100 deposit</span> holds your appointment date and is applied in full to the final tattoo cost.
-          </p>
-          <p className="text-[#555] text-xs mb-10">
-            Deposits are non-refundable if cancelled within 48 hours of the appointment.
-          </p>
-
-          {payError && (
-            <p className="text-red-400 text-sm mb-4">{payError}</p>
-          )}
-
-          <button
-            onClick={handlePayDeposit}
-            disabled={payLoading}
-            className="h-14 px-10 bg-gold text-black font-semibold text-sm tracking-widest uppercase hover:bg-cream transition-colors disabled:opacity-50"
-          >
-            {payLoading ? "Redirecting to Stripe…" : "Pay $100 Deposit"}
-          </button>
-
-          <p className="text-[#444] text-xs mt-4 flex items-center justify-center gap-1.5">
-            <svg width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden>
-              <rect x="1" y="5" width="10" height="8" rx="1" stroke="#555" strokeWidth="1.2"/>
-              <path d="M3 5V3.5a3 3 0 016 0V5" stroke="#555" strokeWidth="1.2"/>
-            </svg>
-            Secured by Stripe. Card details never touch this server.
-          </p>
-        </div>
-      </section>
     </div>
   );
 }

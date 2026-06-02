@@ -144,6 +144,14 @@ export function PaymentGrid() {
         ))}
       </div>
 
+      {/* Deposit note */}
+      <p
+        className="mt-6 text-xs text-center italic"
+        style={{ color: "#F5F0E8", fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)" }}
+      >
+        After your consultation is approved, Miguel will send you a secure Stripe link to submit your deposit and lock in your appointment date.
+      </p>
+
       {/* Stripe security badge */}
       <div className="mt-8 flex items-center justify-center">
         <a

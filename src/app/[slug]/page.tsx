@@ -6,35 +6,16 @@ import { PaymentGrid } from "./PaymentGrid";
 
 export default async function ArtistPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ payment?: string }>;
 }) {
   const { slug } = await params;
-  const { payment } = await searchParams;
   const artist = getArtist(slug);
 
   if (!artist) notFound();
 
   return (
     <main className="bg-black min-h-screen">
-      {/* Payment status banners */}
-      {payment === "success" && (
-        <div className="bg-green-950 border-b border-green-800 px-6 py-4 text-center">
-          <p className="text-green-400 text-sm font-medium">
-            Deposit received. Miguel will confirm your appointment within 24 hours.
-          </p>
-        </div>
-      )}
-      {payment === "canceled" && (
-        <div className="bg-[#1a1000] border-b border-yellow-900 px-6 py-4 text-center">
-          <p className="text-yellow-600 text-sm">
-            Payment was not completed. Your slot has not been held.
-          </p>
-        </div>
-      )}
-
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-5 border-b border-border">
         <span className="text-cream font-semibold tracking-widest text-sm uppercase">
@@ -221,9 +202,9 @@ export default async function ArtistPage({
         </div>
       </section>
 
-      {/* Booking + Calendar + Payment */}
+      {/* Booking + Calendar */}
       <div id="book">
-        <BookingSection artistSlug={slug} />
+        <BookingSection />
       </div>
 
       {/* Footer */}
