@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { getMonthDays, getFirstDayOfWeek } from "@/lib/mock-calendar";
-import type { DayStatus } from "@/lib/mock-calendar";
+import type { DayStatus, CalendarDay } from "@/lib/mock-calendar";
 import { validateImageFiles, MAX_IMAGES } from "@/lib/image-utils";
 
 const MONTH_NAMES = [
@@ -10,7 +10,6 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 const DAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
 
 function statusStyle(status: DayStatus, selected: boolean): string {
   if (selected) return "bg-gold text-black font-semibold cursor-pointer";
@@ -26,20 +25,17 @@ function statusStyle(status: DayStatus, selected: boolean): string {
 }
 
 function Calendar({
-  year,
-  month,
+  days,
+  firstDow,
   selectedDate,
   onSelect,
 }: {
-  year: number;
-  month: number;
+  days: CalendarDay[];
+  firstDow: number;
   selectedDate: string | null;
   onSelect: (date: string) => void;
 }) {
-  const days = getMonthDays(year, month);
-  const firstDow = getFirstDayOfWeek(year, month);
   const blanks = Array(firstDow).fill(null);
-
   return (
     <div>
       <div className="grid grid-cols-7 gap-1 mb-2">
@@ -74,11 +70,43 @@ function Calendar({
   );
 }
 
+function buildRealDays(year: number, month: number, availableDates: Set<string>): CalendarDay[] {
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const days: CalendarDay[] = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const date = new Date(year, month, d);
+    const dow = date.getDay();
+    let status: DayStatus;
+    if (date < todayMidnight) {
+      status = "past";
+    } else if (dow === 0 || dow === 1) {
+      status = "unavailable";
+    } else if (availableDates.has(dateStr)) {
+      status = "available";
+    } else {
+      status = "booked";
+    }
+    days.push({ date: dateStr, status });
+  }
+  return days;
+}
+
 export function BookingSection() {
-  const today = new Date("2026-05-30");
-  const [calYear, setCalYear] = useState(today.getFullYear());
-  const [calMonth, setCalMonth] = useState(today.getMonth() + 1); // June
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+
+  const [calYear, setCalYear] = useState(now.getFullYear());
+  const [calMonth, setCalMonth] = useState(now.getMonth()); // 0-indexed
+
+  const [availableDates, setAvailableDates] = useState<Set<string>>(new Set());
+  // null = loading, true = real calendar, false = fallback to mock
+  const [calendarConnected, setCalendarConnected] = useState<boolean | null>(null);
+
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [manualDate, setManualDate] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -95,6 +123,48 @@ export function BookingSection() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/availability/miguel")
+      .then((r) => r.json())
+      .then((data: { connected: boolean; slots?: { startsAt: string }[] }) => {
+        if (data.connected && Array.isArray(data.slots)) {
+          const dates = new Set(data.slots.map((s) => s.startsAt.split("T")[0]));
+          setAvailableDates(dates);
+          setCalendarConnected(true);
+        } else {
+          setCalendarConnected(false);
+        }
+      })
+      .catch(() => setCalendarConnected(false));
+  }, []);
+
+  function getCalendarDays(): CalendarDay[] {
+    if (calendarConnected === true) {
+      return buildRealDays(calYear, calMonth, availableDates);
+    }
+    return getMonthDays(calYear, calMonth);
+  }
+
+  function handleDateSelect(date: string) {
+    setSelectedDate(date);
+    setManualDate(date);
+  }
+
+  function handleManualDate(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setManualDate(val);
+    setSelectedDate(val || null);
+    if (val) {
+      const parts = val.split("-");
+      const y = parseInt(parts[0]);
+      const m = parseInt(parts[1]) - 1; // 0-indexed
+      if (!isNaN(y) && !isNaN(m)) {
+        setCalYear(y);
+        setCalMonth(m);
+      }
+    }
+  }
 
   function prevMonth() {
     if (calMonth === 0) {
@@ -176,6 +246,7 @@ export function BookingSection() {
       setSubmitState("success");
       setForm({ name: "", email: "", phone: "", idea: "", budget: "", message: "" });
       setSelectedDate(null);
+      setManualDate("");
       imagePreviews.forEach((url) => URL.revokeObjectURL(url));
       setImages([]);
       setImagePreviews([]);
@@ -217,12 +288,18 @@ export function BookingSection() {
               </button>
             </div>
 
-            <Calendar
-              year={calYear}
-              month={calMonth}
-              selectedDate={selectedDate}
-              onSelect={setSelectedDate}
-            />
+            {calendarConnected === null ? (
+              <div className="h-48 flex items-center justify-center">
+                <span className="text-muted text-sm">Loading availability…</span>
+              </div>
+            ) : (
+              <Calendar
+                days={getCalendarDays()}
+                firstDow={getFirstDayOfWeek(calYear, calMonth)}
+                selectedDate={selectedDate}
+                onSelect={handleDateSelect}
+              />
+            )}
 
             <div className="flex gap-5 mt-6 text-xs text-muted">
               <span className="flex items-center gap-1.5">
@@ -237,6 +314,18 @@ export function BookingSection() {
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#222] inline-block" />
                 Closed
               </span>
+            </div>
+
+            <div className="mt-6">
+              <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
+                Don&apos;t see your date? Enter it here
+              </label>
+              <input
+                type="date"
+                value={manualDate}
+                min={todayStr}
+                onChange={handleManualDate}
+              />
             </div>
           </div>
         </div>
@@ -420,7 +509,6 @@ export function BookingSection() {
           )}
         </div>
       </section>
-
     </div>
   );
 }
