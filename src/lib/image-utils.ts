@@ -1,5 +1,5 @@
 export const MAX_IMAGES = 3;
-export const MAX_BYTES_PER_IMAGE = 5 * 1024 * 1024; // 5MB
+export const MAX_BYTES_PER_IMAGE = 10 * 1024 * 1024; // 10MB
 export const ACCEPTED_TYPES = ["image/jpeg", "image/png"];
 // Embed inline instead of attaching when total decoded size exceeds 10MB
 export const INLINE_THRESHOLD_BYTES = 10 * 1024 * 1024;

@@ -25,7 +25,7 @@ function makePayload(name: string, type: string, dataLength: number): ImagePaylo
 
 describe('constants', () => {
   it('MAX_IMAGES is 3', () => expect(MAX_IMAGES).toBe(3))
-  it('MAX_BYTES_PER_IMAGE is 5MB', () => expect(MAX_BYTES_PER_IMAGE).toBe(5 * 1024 * 1024))
+  it('MAX_BYTES_PER_IMAGE is 10MB', () => expect(MAX_BYTES_PER_IMAGE).toBe(10 * 1024 * 1024))
   it('ACCEPTED_TYPES includes jpeg and png', () => {
     expect(ACCEPTED_TYPES).toContain('image/jpeg')
     expect(ACCEPTED_TYPES).toContain('image/png')

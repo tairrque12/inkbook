@@ -1,4 +1,8 @@
 import { Resend } from "resend";
+
+export const config = {
+  api: { bodyParser: { sizeLimit: "35mb" } },
+};
 import {
   validateImageFiles,
   shouldEmbedInline,

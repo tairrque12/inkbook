@@ -443,7 +443,7 @@ export function BookingSection() {
                 <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
                   Reference Images{" "}
                   <span className="normal-case tracking-normal text-[#555]">
-                    (optional · up to 3 · JPEG or PNG · 5MB each)
+                    (optional · up to 3 · JPEG or PNG · 10MB each)
                   </span>
                 </label>
 

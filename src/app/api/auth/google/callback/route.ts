@@ -25,27 +25,41 @@ export async function GET(req: Request) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
 
+  let config
   try {
-    const config = getOAuthConfig(baseUrl)
-    const tokens = await exchangeCodeForTokens(config, code)
+    config = getOAuthConfig(baseUrl)
+  } catch (err) {
+    console.error('[inkbook] OAuth callback: missing OAuth env vars:', err)
+    return html(errorPage('Server configuration error. Please contact support.'), 500)
+  }
 
-    if (!tokens.refresh_token) {
-      return html(
-        errorPage(
-          'No refresh token received. Revoke app access in your Google account settings and try again.',
-        ),
-        400,
-      )
-    }
+  let tokens
+  try {
+    tokens = await exchangeCodeForTokens(config, code)
+  } catch (err) {
+    console.error('[inkbook] OAuth callback: Google token exchange failed:', err)
+    return html(errorPage('Failed to exchange authorization code with Google. Please try again.'), 500)
+  }
 
+  if (!tokens.refresh_token) {
+    return html(
+      errorPage(
+        'No refresh token received. Revoke app access in your Google account settings and try again.',
+      ),
+      400,
+    )
+  }
+
+  try {
     const store = new SupabaseVaultTokenStore(getSupabaseAdmin() as never)
     await store.saveRefreshToken(slug, tokens.refresh_token)
-
-    return html(successPage(), 200)
   } catch (err) {
-    console.error('[inkbook] OAuth callback error:', err)
-    return html(errorPage('Failed to connect calendar. Please try again.'), 500)
+    const detail = err instanceof Error ? err.message : JSON.stringify(err)
+    console.error(`[inkbook] OAuth callback: Supabase write failed for slug="${slug}": ${detail}`, err)
+    return html(errorPage('Failed to save calendar connection. Please try again.'), 500)
   }
+
+  return html(successPage(), 200)
 }
 
 function html(body: string, status: number) {
