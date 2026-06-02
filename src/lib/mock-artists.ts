@@ -25,7 +25,7 @@ const ARTISTS: ArtistProfile[] = [
     location: "Austin, TX",
     bio: "Specializing in realism tattooing with 7 years of experience. Every piece is drawn custom — no flash, no templates. I work closely with each client to bring their vision to life with precision and intent.",
     styles: ["Realism", "Portrait", "Black & Grey", "Color Realism", "Fine Detail"],
-    instagram: "@miguelinkla",
+    instagram: "https://www.instagram.com/miguel_tattoos/",
     portfolio: [
       {
         id: "p1",

@@ -215,7 +215,7 @@ export default async function ArtistPage({
             <p className="text-[#444] text-xs mt-1">© 2026 Miguel · Austin, TX</p>
           </div>
           <div className="flex gap-6 text-xs text-muted">
-            <span>{artist.instagram}</span>
+            <a href={artist.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-cream transition-colors">@miguel_tattoos</a>
             <a href="#book" className="hover:text-cream transition-colors">Book a Consultation</a>
           </div>
         </div>
