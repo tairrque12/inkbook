@@ -41,7 +41,7 @@ export interface WriteBookingInput {
 const CACHE_TTL_MS = 60_000
 
 export class CalendarService {
-  private cachedSlots: BookingSlot[] | null = null
+  private cachedEvents: GoogleEvent[] | null = null
   private cacheExpiresAt = 0
   private authBlocked = false
 
@@ -50,11 +50,11 @@ export class CalendarService {
     private readonly artistId: string,
   ) {}
 
-  async getAvailableSlots(): Promise<BookingSlot[]> {
+  private async fetchEvents(): Promise<GoogleEvent[]> {
     if (this.authBlocked) throw new CalendarAuthError()
 
-    if (this.cachedSlots && Date.now() < this.cacheExpiresAt) {
-      return this.cachedSlots
+    if (this.cachedEvents && Date.now() < this.cacheExpiresAt) {
+      return this.cachedEvents
     }
 
     let events: GoogleEvent[]
@@ -68,18 +68,34 @@ export class CalendarService {
       throw err
     }
 
-    const slots: BookingSlot[] = events.map(evt => ({
+    this.cachedEvents = events
+    this.cacheExpiresAt = Date.now() + CACHE_TTL_MS
+    return events
+  }
+
+  async getAvailableSlots(): Promise<BookingSlot[]> {
+    const events = await this.fetchEvents()
+    return events.map(evt => ({
       id: evt.id,
       artistId: this.artistId,
       startsAt: new Date(evt.start),
       endsAt: new Date(evt.end),
-      status: 'AVAILABLE',
+      status: 'AVAILABLE' as const,
     }))
+  }
 
-    this.cachedSlots = slots
-    this.cacheExpiresAt = Date.now() + CACHE_TTL_MS
-
-    return slots
+  // Returns dates (YYYY-MM-DD) that are fully blocked by all-day events.
+  // All-day events have a date-only start string with no 'T' (e.g. "2026-06-12").
+  // Timed appointments do not block the day — the artist may still be bookable.
+  async getBlockedDates(): Promise<Set<string>> {
+    const events = await this.fetchEvents()
+    const blocked = new Set<string>()
+    for (const evt of events) {
+      if (!evt.start.includes('T')) {
+        blocked.add(evt.start)
+      }
+    }
+    return blocked
   }
 
   async writeBookingToCalendar(input: WriteBookingInput): Promise<string> {
@@ -102,7 +118,7 @@ export class CalendarService {
 
   clearAuthError(): void {
     this.authBlocked = false
-    this.cachedSlots = null
+    this.cachedEvents = null
     this.cacheExpiresAt = 0
   }
 

@@ -120,4 +120,46 @@ describe('CalendarService', () => {
       expect(slots).toEqual([])
     })
   })
+
+  describe('getBlockedDates', () => {
+    it('returns dates for all-day events (no T in start)', async () => {
+      googleClient.listEvents.mockResolvedValue([
+        { id: 'allday-1', start: '2026-06-12', end: '2026-06-13' },
+        { id: 'allday-2', start: '2026-06-15', end: '2026-06-16' },
+      ])
+      const blocked = await service.getBlockedDates()
+      expect(blocked).toEqual(new Set(['2026-06-12', '2026-06-15']))
+    })
+
+    it('does not block dates for timed appointments', async () => {
+      googleClient.listEvents.mockResolvedValue([
+        { id: 'timed-1', start: '2026-06-10T10:00:00Z', end: '2026-06-10T13:00:00Z' },
+      ])
+      const blocked = await service.getBlockedDates()
+      expect(blocked.size).toBe(0)
+    })
+
+    it('handles a mix of all-day and timed events', async () => {
+      googleClient.listEvents.mockResolvedValue([
+        { id: 'allday', start: '2026-06-12', end: '2026-06-13' },
+        { id: 'timed', start: '2026-06-10T10:00:00Z', end: '2026-06-10T13:00:00Z' },
+      ])
+      const blocked = await service.getBlockedDates()
+      expect(blocked).toEqual(new Set(['2026-06-12']))
+    })
+
+    it('shares the event cache with getAvailableSlots — only one API call made', async () => {
+      googleClient.listEvents.mockResolvedValue([
+        { id: 'allday', start: '2026-06-12', end: '2026-06-13' },
+      ])
+      await service.getAvailableSlots()
+      await service.getBlockedDates()
+      expect(googleClient.listEvents).toHaveBeenCalledOnce()
+    })
+
+    it('throws CalendarAuthError when token is expired', async () => {
+      googleClient.listEvents.mockRejectedValue({ code: 401 })
+      await expect(service.getBlockedDates()).rejects.toThrow(CalendarAuthError)
+    })
+  })
 })

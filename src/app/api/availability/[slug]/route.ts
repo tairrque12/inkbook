@@ -47,15 +47,10 @@ export async function GET(
   const calendarService = new CalendarService(googleClient, slug)
 
   try {
-    const slots = await calendarService.getAvailableSlots()
+    const blocked = await calendarService.getBlockedDates()
     return Response.json({
       connected: true,
-      slots: slots.map((s) => ({
-        id: s.id,
-        startsAt: s.startsAt.toISOString(),
-        endsAt: s.endsAt.toISOString(),
-        status: s.status,
-      })),
+      blockedDates: [...blocked],
     })
   } catch (err) {
     if (err instanceof CalendarAuthError) {

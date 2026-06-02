@@ -70,7 +70,7 @@ function Calendar({
   );
 }
 
-function buildRealDays(year: number, month: number, availableDates: Set<string>): CalendarDay[] {
+function buildRealDays(year: number, month: number, blockedDates: Set<string>): CalendarDay[] {
   const todayMidnight = new Date();
   todayMidnight.setHours(0, 0, 0, 0);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -84,10 +84,10 @@ function buildRealDays(year: number, month: number, availableDates: Set<string>)
       status = "past";
     } else if (dow === 0 || dow === 1) {
       status = "unavailable";
-    } else if (availableDates.has(dateStr)) {
-      status = "available";
-    } else {
+    } else if (blockedDates.has(dateStr)) {
       status = "booked";
+    } else {
+      status = "available";
     }
     days.push({ date: dateStr, status });
   }
@@ -101,7 +101,7 @@ export function BookingSection() {
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [calMonth, setCalMonth] = useState(now.getMonth()); // 0-indexed
 
-  const [availableDates, setAvailableDates] = useState<Set<string>>(new Set());
+  const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
   // null = loading, true = real calendar, false = fallback to mock
   const [calendarConnected, setCalendarConnected] = useState<boolean | null>(null);
 
@@ -127,10 +127,9 @@ export function BookingSection() {
   useEffect(() => {
     fetch("/api/availability/miguel")
       .then((r) => r.json())
-      .then((data: { connected: boolean; slots?: { startsAt: string }[] }) => {
-        if (data.connected && Array.isArray(data.slots)) {
-          const dates = new Set(data.slots.map((s) => s.startsAt.split("T")[0]));
-          setAvailableDates(dates);
+      .then((data: { connected: boolean; blockedDates?: string[] }) => {
+        if (data.connected && Array.isArray(data.blockedDates)) {
+          setBlockedDates(new Set(data.blockedDates));
           setCalendarConnected(true);
         } else {
           setCalendarConnected(false);
@@ -141,7 +140,7 @@ export function BookingSection() {
 
   function getCalendarDays(): CalendarDay[] {
     if (calendarConnected === true) {
-      return buildRealDays(calYear, calMonth, availableDates);
+      return buildRealDays(calYear, calMonth, blockedDates);
     }
     return getMonthDays(calYear, calMonth);
   }
