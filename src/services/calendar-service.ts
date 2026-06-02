@@ -85,14 +85,20 @@ export class CalendarService {
   }
 
   // Returns dates (YYYY-MM-DD) that are fully blocked by all-day events.
-  // All-day events have a date-only start string with no 'T' (e.g. "2026-06-12").
+  // All-day events have date-only start/end strings with no 'T'. Google Calendar
+  // uses an exclusive end date, so a Jun 8–13 block has end "2026-06-14".
+  // Multi-day events are expanded to cover every date in the range.
   // Timed appointments do not block the day — the artist may still be bookable.
   async getBlockedDates(): Promise<Set<string>> {
     const events = await this.fetchEvents()
     const blocked = new Set<string>()
     for (const evt of events) {
-      if (!evt.start.includes('T')) {
-        blocked.add(evt.start)
+      if (evt.start.includes('T')) continue // timed event — skip
+      const cursor = new Date(evt.start + 'T00:00:00Z')
+      const endDay = new Date(evt.end + 'T00:00:00Z') // exclusive
+      while (cursor < endDay) {
+        blocked.add(cursor.toISOString().slice(0, 10))
+        cursor.setUTCDate(cursor.getUTCDate() + 1)
       }
     }
     return blocked

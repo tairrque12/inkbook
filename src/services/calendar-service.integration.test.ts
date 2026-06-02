@@ -122,13 +122,33 @@ describe('CalendarService', () => {
   })
 
   describe('getBlockedDates', () => {
-    it('returns dates for all-day events (no T in start)', async () => {
+    it('blocks a single all-day event (start and end are the same calendar day)', async () => {
       googleClient.listEvents.mockResolvedValue([
-        { id: 'allday-1', start: '2026-06-12', end: '2026-06-13' },
-        { id: 'allday-2', start: '2026-06-15', end: '2026-06-16' },
+        { id: 'allday-1', start: '2026-06-12', end: '2026-06-13' }, // Google exclusive end
       ])
       const blocked = await service.getBlockedDates()
-      expect(blocked).toEqual(new Set(['2026-06-12', '2026-06-15']))
+      expect(blocked).toEqual(new Set(['2026-06-12']))
+    })
+
+    it('expands a multi-day all-day block across every date in the range', async () => {
+      // "Out of shop" Jun 8–13 → Google sends end: "2026-06-14" (exclusive)
+      googleClient.listEvents.mockResolvedValue([
+        { id: 'out-of-shop', start: '2026-06-08', end: '2026-06-14' },
+      ])
+      const blocked = await service.getBlockedDates()
+      expect(blocked).toEqual(new Set([
+        '2026-06-08', '2026-06-09', '2026-06-10',
+        '2026-06-11', '2026-06-12', '2026-06-13',
+      ]))
+    })
+
+    it('expands a two-day block correctly', async () => {
+      // "Out of shop" Jun 14–15 → end: "2026-06-16"
+      googleClient.listEvents.mockResolvedValue([
+        { id: 'out-of-shop-2', start: '2026-06-14', end: '2026-06-16' },
+      ])
+      const blocked = await service.getBlockedDates()
+      expect(blocked).toEqual(new Set(['2026-06-14', '2026-06-15']))
     })
 
     it('does not block dates for timed appointments', async () => {
