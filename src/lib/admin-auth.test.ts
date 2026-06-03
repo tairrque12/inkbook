@@ -32,6 +32,15 @@ describe('admin-auth', () => {
     it('rejects a token with no dot separator', async () => {
       expect(await verifySessionToken('notavalidtoken', 'miguel')).toBe(false)
     })
+
+    it('rejects an expired token', async () => {
+      // Build a token whose payload has an expiry in the past
+      const expiredPayload = `miguel:${Date.now() - 1000}`
+      const b64 = Buffer.from(expiredPayload).toString('base64url')
+      // Sign with any string — will fail expiry check before signature check
+      const fakeToken = `${b64}.fakesig`
+      expect(await verifySessionToken(fakeToken, 'miguel')).toBe(false)
+    })
   })
 
   describe('password hashing', () => {

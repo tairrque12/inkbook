@@ -29,7 +29,7 @@ export async function PATCH(
   try {
     const db = getAdminSupabase()
     const consultations = new ConsultationService(db as never)
-    const updated = await consultations.updateStatus(id, body.status as ConsultationStatus)
+    await consultations.updateStatus(id, body.status as ConsultationStatus)
 
     // When marking confirmed, also mark the linked slot as BOOKED
     if (body.status === 'confirmed' && body.slotId) {
@@ -37,7 +37,7 @@ export async function PATCH(
       await slots.markBooked(body.slotId)
     }
 
-    return Response.json({ consultation: updated })
+    return Response.json({ ok: true })
   } catch (err) {
     console.error('[admin] consultation update error:', err)
     return Response.json({ error: 'Failed to update consultation' }, { status: 500 })

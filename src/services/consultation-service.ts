@@ -53,7 +53,7 @@ interface SupabaseClient {
       }
     }
     insert(row: object): { select(): { single(): Promise<{ data: ConsultationRow | null; error: { message: string } | null }> } }
-    update(patch: object): { eq(col: string, val: string): Promise<{ data: ConsultationRow | null; error: { message: string } | null }> }
+    update(patch: object): { eq(col: string, val: string): Promise<{ error: { message: string } | null }> }
   }
 }
 
@@ -112,14 +112,14 @@ export class ConsultationService {
     return toConsultation(data)
   }
 
-  async updateStatus(id: string, status: ConsultationStatus): Promise<Consultation> {
-    const { data, error } = await this.db
+  // Supabase v2 .update().eq() returns null data without .select() — we don't
+  // need the row back here since the dashboard re-fetches the full list after.
+  async updateStatus(id: string, status: ConsultationStatus): Promise<void> {
+    const { error } = await this.db
       .from('consultations')
       .update({ status })
       .eq('id', id)
 
     if (error) throw new Error(error.message)
-    if (!data) throw new Error('Consultation not found')
-    return toConsultation(data as ConsultationRow)
   }
 }

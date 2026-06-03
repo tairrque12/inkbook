@@ -24,12 +24,11 @@ function makeDb(overrides: {
   listError?: { message: string } | null
   insertData?: object | null
   insertError?: { message: string } | null
-  updateData?: object | null
   updateError?: { message: string } | null
 } = {}) {
-  const listResult = { data: overrides.listData ?? [makeRow()], error: overrides.listError ?? null }
-  const insertResult = { data: overrides.insertData ?? makeRow(), error: overrides.insertError ?? null }
-  const updateResult = { data: overrides.updateData ?? makeRow({ status: 'approved' }), error: overrides.updateError ?? null }
+  const listResult = { data: 'listData' in overrides ? overrides.listData : [makeRow()], error: overrides.listError ?? null }
+  const insertResult = { data: 'insertData' in overrides ? overrides.insertData : makeRow(), error: overrides.insertError ?? null }
+  const updateResult = { error: overrides.updateError ?? null }
 
   return {
     from: vi.fn().mockReturnValue({
@@ -83,6 +82,12 @@ describe('ConsultationService', () => {
       expect(result).toEqual([])
     })
 
+    it('returns empty array when Supabase returns null data with no error', async () => {
+      const svc = new ConsultationService(makeDb({ listData: null }) as never)
+      const result = await svc.list('miguel')
+      expect(result).toEqual([])
+    })
+
     it('throws when Supabase returns an error', async () => {
       const svc = new ConsultationService(makeDb({ listData: null, listError: { message: 'DB error' } }) as never)
       await expect(svc.list('miguel')).rejects.toThrow('DB error')
@@ -122,10 +127,15 @@ describe('ConsultationService', () => {
       const svc = new ConsultationService(makeDb({ insertData: null, insertError: { message: 'insert failed' } }) as never)
       await expect(svc.create(input)).rejects.toThrow('insert failed')
     })
+
+    it('throws when Supabase returns null data with no error', async () => {
+      const svc = new ConsultationService(makeDb({ insertData: null }) as never)
+      await expect(svc.create(input)).rejects.toThrow('No data returned from insert')
+    })
   })
 
   describe('updateStatus', () => {
-    it('updates consultation status', async () => {
+    it('calls update on the consultations table with the new status', async () => {
       const db = makeDb()
       const svc = new ConsultationService(db as never)
       await svc.updateStatus('cons-1', 'approved')
@@ -133,13 +143,12 @@ describe('ConsultationService', () => {
       expect(fromResult.update).toHaveBeenCalledWith({ status: 'approved' })
     })
 
-    it('returns updated consultation', async () => {
-      const result = await service.updateStatus('cons-1', 'approved')
-      expect(result.status).toBe('approved')
+    it('resolves without error on success', async () => {
+      await expect(service.updateStatus('cons-1', 'approved')).resolves.toBeUndefined()
     })
 
     it('throws when update fails', async () => {
-      const svc = new ConsultationService(makeDb({ updateData: null, updateError: { message: 'not found' } }) as never)
+      const svc = new ConsultationService(makeDb({ updateError: { message: 'not found' } }) as never)
       await expect(svc.updateStatus('cons-1', 'approved')).rejects.toThrow('not found')
     })
   })

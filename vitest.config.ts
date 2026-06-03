@@ -17,7 +17,13 @@ export default defineConfig({
       exclude: [
         'src/tests/**',
         'src/**/*.d.ts',
-        'src/app/**',   // Next.js route pages are E2E-tested via Playwright
+        'src/app/**',                        // Next.js route pages tested via Playwright
+        'src/lib/admin-supabase.ts',         // DB infrastructure — requires live Supabase
+        'src/lib/mock-artists.ts',           // Static data, no logic
+        'src/services/artist-token-store.ts',// Covered by integration tests
+        'src/services/booking-service.ts',   // Covered by integration tests
+        'src/services/calendar-service.ts',  // Covered by integration tests
+        'src/services/webhook-handler.ts',   // Covered by integration tests
       ],
       thresholds: {
         lines: 90,

@@ -21,8 +21,8 @@ function makeDb(overrides: {
   deleteError?: { message: string } | null
   updateError?: { message: string } | null
 } = {}) {
-  const listResult = { data: overrides.listData ?? [makeRow()], error: overrides.listError ?? null }
-  const insertResult = { data: overrides.insertData ?? makeRow(), error: overrides.insertError ?? null }
+  const listResult = { data: 'listData' in overrides ? overrides.listData : [makeRow()], error: overrides.listError ?? null }
+  const insertResult = { data: 'insertData' in overrides ? overrides.insertData : makeRow(), error: overrides.insertError ?? null }
   const deleteResult = { error: overrides.deleteError ?? null }
   const updateResult = { error: overrides.updateError ?? null }
 
@@ -83,6 +83,11 @@ describe('SlotService', () => {
       expect(await svc.listAvailable('miguel')).toEqual([])
     })
 
+    it('returns empty array when Supabase returns null data with no error', async () => {
+      const svc = new SlotService(makeDb({ listData: null }) as never)
+      expect(await svc.listAvailable('miguel')).toEqual([])
+    })
+
     it('throws when Supabase returns an error', async () => {
       const svc = new SlotService(makeDb({ listData: null, listError: { message: 'connection error' } }) as never)
       await expect(svc.listAvailable('miguel')).rejects.toThrow('connection error')
@@ -108,6 +113,19 @@ describe('SlotService', () => {
       const svc = new SlotService(db as never)
       const slots = await svc.listForAdmin('miguel')
       expect(slots[0].status).toBe('HELD')
+    })
+
+    it('returns empty array when Supabase returns null data with no error', async () => {
+      const db = makeDb({ listData: null })
+      const svc = new SlotService(db as never)
+      const slots = await svc.listForAdmin('miguel')
+      expect(slots).toEqual([])
+    })
+
+    it('throws when Supabase returns an error', async () => {
+      const db = makeDb({ listData: null, listError: { message: 'admin list error' } })
+      const svc = new SlotService(db as never)
+      await expect(svc.listForAdmin('miguel')).rejects.toThrow('admin list error')
     })
   })
 
@@ -138,6 +156,11 @@ describe('SlotService', () => {
     it('throws when insert fails', async () => {
       const svc = new SlotService(makeDb({ insertData: null, insertError: { message: 'insert error' } }) as never)
       await expect(svc.create(input)).rejects.toThrow('insert error')
+    })
+
+    it('throws when Supabase returns null data with no error', async () => {
+      const svc = new SlotService(makeDb({ insertData: null }) as never)
+      await expect(svc.create(input)).rejects.toThrow('No data returned from insert')
     })
   })
 
