@@ -1,112 +1,66 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { getMonthDays, getFirstDayOfWeek } from "@/lib/mock-calendar";
-import type { DayStatus, CalendarDay } from "@/lib/mock-calendar";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { validateImageFiles, MAX_IMAGES } from "@/lib/image-utils";
+import { SLOT_TYPE_LABELS } from "@/services/slot-service";
+import type { SlotType } from "@/services/slot-service";
 
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-const DAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
-function statusStyle(status: DayStatus, selected: boolean): string {
-  if (selected) return "bg-gold text-black font-semibold cursor-pointer";
-  switch (status) {
-    case "available":
-      return "bg-[#1A2E1A] text-green-400 hover:bg-[#223D22] cursor-pointer";
-    case "booked":
-      return "bg-[#2E1A1A] text-red-400 cursor-default";
-    case "past":
-    case "unavailable":
-      return "text-[#333] cursor-default";
-  }
+interface AvailableSlot {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  slotType: SlotType;
 }
 
-function Calendar({
-  days,
-  firstDow,
-  selectedDate,
+function formatSlotDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function formatSlotTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function SlotCard({
+  slot,
   onSelect,
 }: {
-  days: CalendarDay[];
-  firstDow: number;
-  selectedDate: string | null;
+  slot: AvailableSlot;
   onSelect: (date: string) => void;
 }) {
-  const blanks = Array(firstDow).fill(null);
+  const dateStr = slot.startsAt.split("T")[0];
   return (
-    <div>
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {DAY_LABELS.map((d) => (
-          <div key={d} className="text-center text-xs text-muted py-1">
-            {d}
-          </div>
-        ))}
+    <div className="border border-[#222] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-1">
+        <p className="text-cream font-medium">{formatSlotDate(slot.startsAt)}</p>
+        <p className="text-[#888] text-sm">
+          {formatSlotTime(slot.startsAt)} – {formatSlotTime(slot.endsAt)}
+        </p>
+        <span className="text-[10px] text-[#C9A96E] tracking-widest uppercase">
+          {SLOT_TYPE_LABELS[slot.slotType]}
+        </span>
       </div>
-      <div className="grid grid-cols-7 gap-1">
-        {blanks.map((_, i) => (
-          <div key={`blank-${i}`} />
-        ))}
-        {days.map(({ date, status }) => {
-          const d = parseInt(date.split("-")[2]);
-          const isSelected = date === selectedDate;
-          const clickable = status === "available";
-          return (
-            <button
-              key={date}
-              onClick={() => clickable && onSelect(date)}
-              disabled={!clickable}
-              className={`aspect-square flex items-center justify-center rounded text-sm min-h-[44px] transition-colors ${statusStyle(status, isSelected)}`}
-              aria-label={`${date} — ${status}`}
-            >
-              {d}
-            </button>
-          );
-        })}
-      </div>
+      <button
+        onClick={() => onSelect(dateStr)}
+        className="shrink-0 h-11 px-5 border border-cream text-cream text-xs tracking-widest uppercase hover:bg-cream hover:text-black transition-colors"
+      >
+        Request This Date
+      </button>
     </div>
   );
 }
 
-function buildRealDays(year: number, month: number, blockedDates: Set<string>): CalendarDay[] {
-  const todayMidnight = new Date();
-  todayMidnight.setHours(0, 0, 0, 0);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const days: CalendarDay[] = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    const date = new Date(year, month, d);
-    const dow = date.getDay();
-    let status: DayStatus;
-    if (date < todayMidnight) {
-      status = "past";
-    } else if (dow === 0 || dow === 1) {
-      status = "unavailable";
-    } else if (blockedDates.has(dateStr)) {
-      status = "booked";
-    } else {
-      status = "available";
-    }
-    days.push({ date: dateStr, status });
-  }
-  return days;
-}
-
 export function BookingSection() {
-  const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
-
-  const [calYear, setCalYear] = useState(now.getFullYear());
-  const [calMonth, setCalMonth] = useState(now.getMonth()); // 0-indexed
-
-  const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
-  // null = loading, true = real calendar, false = fallback to mock
-  const [calendarConnected, setCalendarConnected] = useState<boolean | null>(null);
+  const [slots, setSlots] = useState<AvailableSlot[]>([]);
+  const [slotsLoaded, setSlotsLoaded] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [manualDate, setManualDate] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -123,70 +77,31 @@ export function BookingSection() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
+  const fetchSlots = useCallback(() => {
     fetch("/api/availability/miguel")
       .then((r) => r.json())
-      .then((data: { connected: boolean; blockedDates?: string[] }) => {
-        if (data.connected && Array.isArray(data.blockedDates)) {
-          setBlockedDates(new Set(data.blockedDates));
-          setCalendarConnected(true);
-        } else {
-          setCalendarConnected(false);
-        }
+      .then((data: { slots?: AvailableSlot[] }) => {
+        setSlots(data.slots ?? []);
+        setSlotsLoaded(true);
       })
-      .catch(() => setCalendarConnected(false));
+      .catch(() => setSlotsLoaded(true));
   }, []);
 
-  function getCalendarDays(): CalendarDay[] {
-    if (calendarConnected === true) {
-      return buildRealDays(calYear, calMonth, blockedDates);
-    }
-    return getMonthDays(calYear, calMonth);
-  }
+  useEffect(() => { fetchSlots() }, [fetchSlots]);
 
-  function handleDateSelect(date: string) {
+  function handleRequestDate(date: string) {
     setSelectedDate(date);
-    setManualDate(date);
-  }
-
-  function handleManualDate(e: React.ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value;
-    setManualDate(val);
-    setSelectedDate(val || null);
-    if (val) {
-      const parts = val.split("-");
-      const y = parseInt(parts[0]);
-      const m = parseInt(parts[1]) - 1; // 0-indexed
-      if (!isNaN(y) && !isNaN(m)) {
-        setCalYear(y);
-        setCalMonth(m);
-      }
-    }
-  }
-
-  function prevMonth() {
-    if (calMonth === 0) {
-      setCalMonth(11);
-      setCalYear((y) => y - 1);
-    } else {
-      setCalMonth((m) => m - 1);
-    }
-  }
-
-  function nextMonth() {
-    if (calMonth === 11) {
-      setCalMonth(0);
-      setCalYear((y) => y + 1);
-    } else {
-      setCalMonth((m) => m + 1);
-    }
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     const combined = [...images, ...files];
-    const error = validateImageFiles(combined.map((f) => ({ name: f.name, type: f.type, size: f.size })));
+    const error = validateImageFiles(
+      combined.map((f) => ({ name: f.name, type: f.type, size: f.size }))
+    );
     if (error) {
       setImageError(error);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -245,7 +160,6 @@ export function BookingSection() {
       setSubmitState("success");
       setForm({ name: "", email: "", phone: "", idea: "", budget: "", message: "" });
       setSelectedDate(null);
-      setManualDate("");
       imagePreviews.forEach((url) => URL.revokeObjectURL(url));
       setImages([]);
       setImagePreviews([]);
@@ -259,79 +173,35 @@ export function BookingSection() {
 
   return (
     <div>
-      {/* Availability Calendar */}
+      {/* Available Slots */}
       <section className="border-t border-border py-20 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-2xl mx-auto">
           <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Availability</p>
           <h2 className="text-3xl font-light text-cream mb-2">Open Dates</h2>
-          <p className="text-muted text-sm mb-10">Tue – Sat · 10am – 7pm · Austin, TX</p>
+          <p className="text-muted text-sm mb-10">Tue – Sat · Austin, TX · Click a date to pre-fill the form below.</p>
 
-          <div className="max-w-sm">
-            <div className="flex items-center justify-between mb-6">
-              <button
-                onClick={prevMonth}
-                className="w-11 h-11 flex items-center justify-center border border-border rounded text-muted hover:text-cream hover:border-[#444] transition-colors"
-                aria-label="Previous month"
-              >
-                ←
-              </button>
-              <span className="text-cream font-medium">
-                {MONTH_NAMES[calMonth]} {calYear}
-              </span>
-              <button
-                onClick={nextMonth}
-                className="w-11 h-11 flex items-center justify-center border border-border rounded text-muted hover:text-cream hover:border-[#444] transition-colors"
-                aria-label="Next month"
-              >
-                →
-              </button>
+          {!slotsLoaded ? (
+            <div className="py-12 text-center">
+              <p className="text-[#444] text-sm">Loading availability…</p>
             </div>
-
-            {calendarConnected === null ? (
-              <div className="h-48 flex items-center justify-center">
-                <span className="text-muted text-sm">Loading availability…</span>
-              </div>
-            ) : (
-              <Calendar
-                days={getCalendarDays()}
-                firstDow={getFirstDayOfWeek(calYear, calMonth)}
-                selectedDate={selectedDate}
-                onSelect={handleDateSelect}
-              />
-            )}
-
-            <div className="flex gap-5 mt-6 text-xs text-muted">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-green-400/30 inline-block" />
-                Available
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-red-400/30 inline-block" />
-                Booked
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-[#222] inline-block" />
-                Closed
-              </span>
+          ) : slots.length === 0 ? (
+            <div className="py-12 border border-[#1a1a1a] text-center px-6">
+              <p className="text-[#666] text-sm leading-relaxed">
+                No dates currently available — fill out the form below with your preferred date and Miguel will be in touch.
+              </p>
             </div>
-
-            <div className="mt-6">
-              <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
-                Don&apos;t see your date? Enter it here
-              </label>
-              <input
-                type="date"
-                value={manualDate}
-                min={todayStr}
-                onChange={handleManualDate}
-              />
+          ) : (
+            <div className="flex flex-col gap-3">
+              {slots.map((slot) => (
+                <SlotCard key={slot.id} slot={slot} onSelect={handleRequestDate} />
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </section>
 
       {/* Booking Form */}
-      <section className="border-t border-border py-20 px-6 bg-card">
+      <section ref={formRef} className="border-t border-border py-20 px-6 bg-card">
         <div className="max-w-2xl mx-auto">
           <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Get in touch</p>
           <h2 className="text-3xl font-light text-cream mb-2">Book a Free Consultation Today!</h2>
@@ -348,9 +218,7 @@ export function BookingSection() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
-                    Full Name *
-                  </label>
+                  <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">Full Name *</label>
                   <input
                     type="text"
                     required
@@ -360,9 +228,7 @@ export function BookingSection() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
-                    Email *
-                  </label>
+                  <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">Email *</label>
                   <input
                     type="email"
                     required
@@ -375,9 +241,7 @@ export function BookingSection() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
-                    Phone (optional)
-                  </label>
+                  <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">Phone (optional)</label>
                   <input
                     type="tel"
                     placeholder="(555) 000-0000"
@@ -386,23 +250,19 @@ export function BookingSection() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
-                    Preferred Date
-                  </label>
+                  <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">Preferred Date</label>
                   <input
-                    type="text"
-                    readOnly
-                    placeholder="Select from calendar above"
+                    type="date"
                     value={selectedDate ?? ""}
-                    className="cursor-default"
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(e) => setSelectedDate(e.target.value || null)}
+                    placeholder="Select or enter a date"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
-                  Tattoo Idea *
-                </label>
+                <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">Tattoo Idea *</label>
                 <textarea
                   required
                   rows={4}
@@ -414,9 +274,7 @@ export function BookingSection() {
               </div>
 
               <div>
-                <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
-                  Budget (optional)
-                </label>
+                <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">Budget (optional)</label>
                 <input
                   type="text"
                   placeholder="e.g. $500, around $1,000, flexible"
@@ -426,9 +284,7 @@ export function BookingSection() {
               </div>
 
               <div>
-                <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">
-                  Additional Notes
-                </label>
+                <label className="block text-xs text-muted mb-1.5 uppercase tracking-wider">Additional Notes</label>
                 <textarea
                   rows={3}
                   placeholder="Anything else I should know — reference images, scheduling constraints, etc."
@@ -471,7 +327,7 @@ export function BookingSection() {
                 {images.length < MAX_IMAGES && (
                   <label className="flex items-center justify-center gap-2 h-11 px-4 border border-dashed border-border rounded cursor-pointer text-muted text-sm hover:border-[#444] hover:text-cream transition-colors">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-                      <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                     Add {images.length > 0 ? "another" : "a"} reference image
                     <input

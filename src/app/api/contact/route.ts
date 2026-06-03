@@ -1,8 +1,5 @@
 import { Resend } from "resend";
-
-export const config = {
-  api: { bodyParser: { sizeLimit: "35mb" } },
-};
+import { createClient } from "@supabase/supabase-js";
 import {
   validateImageFiles,
   shouldEmbedInline,
@@ -10,10 +7,15 @@ import {
   buildImageAttachments,
 } from "@/lib/image-utils";
 import type { ImagePayload } from "@/lib/image-utils";
+import { ConsultationService } from "@/services/consultation-service";
+
+export const config = {
+  api: { bodyParser: { sizeLimit: "35mb" } },
+};
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { name, email, phone, idea, preferredDate, budget, message } = body;
+  const { name, email, phone, idea, placement, preferredDate, budget, message } = body;
   const images: ImagePayload[] = Array.isArray(body.images) ? body.images : [];
 
   if (!name || !email || !idea) {
@@ -30,6 +32,30 @@ export async function POST(req: Request) {
     );
     if (imageError) {
       return Response.json({ error: imageError }, { status: 400 });
+    }
+  }
+
+  // Write consultation to Supabase (best-effort — don't fail the request if DB is down)
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const db = createClient(supabaseUrl, supabaseKey);
+      const consultations = new ConsultationService(db as never);
+      await consultations.create({
+        artistSlug: "miguel",
+        customerName: name,
+        customerEmail: email,
+        customerPhone: phone,
+        tattooIdea: idea,
+        placement,
+        budget,
+        preferredDate,
+        message,
+        referenceImageUrls: [],  // images stored in email; URLs not available at this stage
+      });
+    } catch (err) {
+      console.error("[inkbook] Failed to write consultation to Supabase:", err);
     }
   }
 
