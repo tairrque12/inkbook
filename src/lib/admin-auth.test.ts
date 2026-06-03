@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { createSessionToken, verifySessionToken, cookieName, hashPassword, verifyPassword } from './admin-auth'
 
 describe('admin-auth', () => {

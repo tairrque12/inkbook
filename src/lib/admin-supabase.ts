@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { verifySessionToken, cookieName, hashPassword } from './admin-auth'
 
 export function getAdminSupabase() {
   const url = process.env.SUPABASE_URL
@@ -24,15 +25,12 @@ export async function getOrSeedPasswordHash(slug: string): Promise<string | null
   const adminPassword = process.env.ADMIN_PASSWORD
   if (!adminPassword) return null
 
-  const { hashPassword } = await import('./admin-auth')
   const hash = await hashPassword(adminPassword)
-
   await db.from('artist_admins').upsert({ slug, password_hash: hash })
   return hash
 }
 
-export function requireAuth(req: Request, slug: string): Promise<boolean> {
-  const { verifySessionToken, cookieName } = require('./admin-auth')
+export async function requireAuth(req: Request, slug: string): Promise<boolean> {
   const cookieHeader = req.headers.get('cookie') ?? ''
   const cookies = Object.fromEntries(
     cookieHeader.split(';').map(c => {

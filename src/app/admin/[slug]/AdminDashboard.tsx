@@ -200,7 +200,7 @@ function AddSlotForm({ slug, onCreated }: { slug: string; onCreated: () => void 
 
 // ── Main Dashboard ───────────────────────────────────────────────────────────
 
-export function AdminDashboard({ slug, artistName }: { slug: string; artistName: string }) {
+export function AdminDashboard({ slug }: { slug: string; artistName?: string }) {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('consultations')
   const [consultationsView, setConsultationsView] = useState<ConsultationsView>('active')

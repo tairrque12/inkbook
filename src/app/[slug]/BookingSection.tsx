@@ -306,6 +306,7 @@ export function BookingSection() {
                   <div className="flex flex-wrap gap-3 mb-3">
                     {imagePreviews.map((src, i) => (
                       <div key={i} className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={src}
                           alt={`Reference ${i + 1}`}
