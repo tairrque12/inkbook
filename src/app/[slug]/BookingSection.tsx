@@ -2,14 +2,12 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { validateImageFiles, MAX_IMAGES } from "@/lib/image-utils";
-import { SLOT_TYPE_LABELS } from "@/services/slot-service";
-import type { SlotType } from "@/services/slot-service";
 
 interface AvailableSlot {
   id: string;
   startsAt: string;
   endsAt: string;
-  slotType: SlotType;
+  slotType: string;
 }
 
 function formatSlotDate(iso: string): string {
@@ -17,13 +15,6 @@ function formatSlotDate(iso: string): string {
     weekday: "long",
     month: "long",
     day: "numeric",
-  });
-}
-
-function formatSlotTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
   });
 }
 
@@ -37,15 +28,7 @@ function SlotCard({
   const dateStr = slot.startsAt.split("T")[0];
   return (
     <div className="border border-[#222] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div className="flex flex-col gap-1">
-        <p className="text-cream font-medium">{formatSlotDate(slot.startsAt)}</p>
-        <p className="text-[#888] text-sm">
-          {formatSlotTime(slot.startsAt)} – {formatSlotTime(slot.endsAt)}
-        </p>
-        <span className="text-[10px] text-[#C9A96E] tracking-widest uppercase">
-          {SLOT_TYPE_LABELS[slot.slotType]}
-        </span>
-      </div>
+      <p className="text-cream font-medium">{formatSlotDate(slot.startsAt)}</p>
       <button
         onClick={() => onSelect(dateStr)}
         className="shrink-0 h-11 px-5 border border-cream text-cream text-xs tracking-widest uppercase hover:bg-cream hover:text-black transition-colors"

@@ -106,20 +106,20 @@ function ConsultationCard({
 function MonthCalendar({
   year,
   month,
-  slotsByDate,
-  pending,
+  savedDates,   // dates confirmed in DB
+  draftOpen,    // user's current selection (unsaved)
   onToggle,
 }: {
   year: number
   month: number
-  slotsByDate: Map<string, string>
-  pending: Set<string>
+  savedDates: Map<string, string>
+  draftOpen: Set<string>
   onToggle: (date: string) => void
 }) {
   const todayMidnight = new Date()
   todayMidnight.setHours(0, 0, 0, 0)
 
-  const firstDow   = new Date(year, month, 1).getDay()
+  const firstDow    = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
   return (
@@ -128,45 +128,45 @@ function MonthCalendar({
         {MONTH_NAMES[month]} {year}
       </p>
 
-      {/* Day-of-week headers */}
       <div className="grid grid-cols-7 mb-1">
         {DAY_LABELS.map(d => (
           <div key={d} className="text-center text-[10px] text-[#3a3a3a] py-1">{d}</div>
         ))}
       </div>
 
-      {/* Date grid */}
       <div className="grid grid-cols-7 gap-0.5">
-        {/* Leading blanks */}
         {Array.from({ length: firstDow }).map((_, i) => (
           <div key={`blank-${i}`} />
         ))}
 
         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-          const date = new Date(year, month, d)
-          const isPast = date < todayMidnight
-          const isOpen = slotsByDate.has(dateStr)
-          const isLoading = pending.has(dateStr)
+          const isPast     = new Date(year, month, d) < todayMidnight
+          const isSelected = draftOpen.has(dateStr)
+          const isSaved    = savedDates.has(dateStr)
+
+          // Colours:
+          // selected → green
+          // deselected but was saved → red tint (will be removed on save)
+          // neither → grey
+          let cls = 'text-[#555] hover:bg-[#161616] hover:text-cream cursor-pointer'
+          if (isPast) {
+            cls = 'text-[#252525] cursor-default'
+          } else if (isSelected) {
+            cls = 'bg-green-900/70 text-green-300 hover:bg-green-800/60 cursor-pointer'
+          } else if (isSaved) {
+            cls = 'bg-red-900/30 text-red-400 hover:bg-red-900/50 cursor-pointer'
+          }
 
           return (
             <button
               key={d}
-              onClick={() => !isPast && !isLoading && onToggle(dateStr)}
-              disabled={isPast || isLoading}
-              aria-label={`${dateStr}${isOpen ? ' — open, click to remove' : ' — click to mark open'}`}
-              className={[
-                'aspect-square flex items-center justify-center rounded text-xs min-h-[40px] transition-all select-none',
-                isPast
-                  ? 'text-[#252525] cursor-default'
-                  : isLoading
-                    ? 'bg-[#1a1a1a] text-[#555] cursor-wait'
-                    : isOpen
-                      ? 'bg-green-900/70 text-green-300 hover:bg-red-900/50 hover:text-red-300 cursor-pointer'
-                      : 'text-[#555] hover:bg-[#161616] hover:text-cream cursor-pointer',
-              ].join(' ')}
+              onClick={() => !isPast && onToggle(dateStr)}
+              disabled={isPast}
+              aria-label={dateStr}
+              className={`aspect-square flex items-center justify-center rounded text-xs min-h-[40px] transition-all select-none ${cls}`}
             >
-              {isLoading ? '·' : d}
+              {d}
             </button>
           )
         })}
@@ -179,12 +179,14 @@ function MonthCalendar({
 
 export function AdminDashboard({ slug }: { slug: string; artistName?: string }) {
   const router = useRouter()
-  const [tab, setTab] = useState<Tab>('consultations')
+  const [tab, setTab]                             = useState<Tab>('consultations')
   const [consultationsView, setConsultationsView] = useState<ConsultationsView>('active')
-  const [consultations, setConsultations] = useState<Consultation[]>([])
-  const [slots, setSlots] = useState<Slot[]>([])
-  const [loading, setLoading] = useState(true)
-  const [pendingDates, setPendingDates] = useState<Set<string>>(new Set())
+  const [consultations, setConsultations]         = useState<Consultation[]>([])
+  const [slots, setSlots]                         = useState<Slot[]>([])
+  const [loading, setLoading]                     = useState(true)
+  const [saving, setSaving]                       = useState(false)
+  // null = not yet initialised (wait for first fetch)
+  const [draftOpen, setDraftOpen]                 = useState<Set<string> | null>(null)
 
   const fetchConsultations = useCallback(async () => {
     const res = await fetch(`/api/admin/${slug}/consultations`)
@@ -198,7 +200,14 @@ export function AdminDashboard({ slug }: { slug: string; artistName?: string }) 
     const res = await fetch(`/api/admin/${slug}/slots`)
     if (res.ok) {
       const data = await res.json()
-      setSlots(data.slots ?? [])
+      const fetched: Slot[] = data.slots ?? []
+      setSlots(fetched)
+      // Sync draft to DB state (reset after save, initialise on first load)
+      setDraftOpen(new Set(
+        fetched
+          .filter(s => s.status === 'AVAILABLE')
+          .map(s => s.startsAt.split('T')[0])
+      ))
     }
   }, [slug])
 
@@ -206,6 +215,55 @@ export function AdminDashboard({ slug }: { slug: string; artistName?: string }) 
     setLoading(true)
     Promise.all([fetchConsultations(), fetchSlots()]).finally(() => setLoading(false))
   }, [fetchConsultations, fetchSlots])
+
+  // Saved state: dateStr → slotId
+  const savedDates = new Map(
+    slots
+      .filter(s => s.status === 'AVAILABLE')
+      .map(s => [s.startsAt.split('T')[0], s.id])
+  )
+
+  // Whether draft differs from what's in DB
+  const hasChanges = draftOpen !== null && (() => {
+    if (draftOpen.size !== savedDates.size) return true
+    for (const d of draftOpen) if (!savedDates.has(d)) return true
+    return false
+  })()
+
+  function toggleDate(dateStr: string) {
+    setDraftOpen(prev => {
+      const next = new Set(prev ?? savedDates.keys())
+      if (next.has(dateStr)) next.delete(dateStr)
+      else next.add(dateStr)
+      return next
+    })
+  }
+
+  async function handleSave() {
+    if (!draftOpen || saving) return
+    setSaving(true)
+    try {
+      const toCreate = [...draftOpen].filter(d => !savedDates.has(d))
+      const toDelete = [...savedDates.keys()].filter(d => !draftOpen.has(d))
+
+      await Promise.all([
+        ...toCreate.map(date =>
+          fetch(`/api/admin/${slug}/slots`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date, startTime: '10:00', endTime: '18:00', slotType: 'full_day' }),
+          })
+        ),
+        ...toDelete.map(date =>
+          fetch(`/api/admin/${slug}/slots/${savedDates.get(date)}`, { method: 'DELETE' })
+        ),
+      ])
+
+      await fetchSlots() // also resets draftOpen to match new DB state
+    } finally {
+      setSaving(false)
+    }
+  }
 
   async function handleConsultationAction(id: string, status: ConsultationStatus) {
     await fetch(`/api/admin/${slug}/consultations/${id}`, {
@@ -219,32 +277,6 @@ export function AdminDashboard({ slug }: { slug: string; artistName?: string }) 
   async function handleLogout() {
     await fetch(`/api/admin/${slug}/logout`, { method: 'POST' })
     router.refresh()
-  }
-
-  // Build a date → slotId map from all AVAILABLE slots
-  const slotsByDate = new Map(
-    slots
-      .filter(s => s.status === 'AVAILABLE')
-      .map(s => [s.startsAt.split('T')[0], s.id])
-  )
-
-  async function toggleDate(dateStr: string) {
-    setPendingDates(prev => new Set(prev).add(dateStr))
-    try {
-      const existingId = slotsByDate.get(dateStr)
-      if (existingId) {
-        await fetch(`/api/admin/${slug}/slots/${existingId}`, { method: 'DELETE' })
-      } else {
-        await fetch(`/api/admin/${slug}/slots`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ date: dateStr, startTime: '10:00', endTime: '18:00', slotType: 'full_day' }),
-        })
-      }
-      await fetchSlots()
-    } finally {
-      setPendingDates(prev => { const n = new Set(prev); n.delete(dateStr); return n })
-    }
   }
 
   // 3 months starting from today
@@ -324,28 +356,43 @@ export function AdminDashboard({ slug }: { slug: string; artistName?: string }) 
       ) : (
 
         // ── Availability tab ───────────────────────────────────────────────
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[#555] text-xs">
-              Tap a date to mark it open. Tap again to remove it.
-            </p>
-            <span className="flex items-center gap-1.5 text-xs text-[#555]">
-              <span className="w-2.5 h-2.5 rounded-sm bg-green-900/70 inline-block" />
-              Open
-            </span>
+        <div className="flex flex-col gap-8">
+          {/* Legend + hint */}
+          <div className="flex items-center justify-between">
+            <p className="text-[#555] text-xs">Tap dates to select. Hit Save when done.</p>
+            <div className="flex items-center gap-3 text-[10px] text-[#555]">
+              <span className="flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-sm bg-green-900/70 inline-block" /> Open
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-sm bg-red-900/30 inline-block" /> Removing
+              </span>
+            </div>
           </div>
 
+          {/* 3 months */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {months.map(({ year, month }) => (
               <MonthCalendar
                 key={`${year}-${month}`}
                 year={year}
                 month={month}
-                slotsByDate={slotsByDate}
-                pending={pendingDates}
+                savedDates={savedDates}
+                draftOpen={draftOpen ?? new Set(savedDates.keys())}
                 onToggle={toggleDate}
               />
             ))}
+          </div>
+
+          {/* Save button — only visible when there are unsaved changes */}
+          <div className={`transition-opacity duration-150 ${hasChanges ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <button
+              onClick={handleSave}
+              disabled={saving || !hasChanges}
+              className="w-full h-14 bg-[#C9A96E] text-black font-semibold text-sm tracking-widest uppercase hover:bg-cream transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Saving…' : 'Save Changes'}
+            </button>
           </div>
         </div>
       )}
