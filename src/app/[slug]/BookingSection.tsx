@@ -10,31 +10,77 @@ interface AvailableSlot {
   slotType: string;
 }
 
-function formatSlotDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-}
+const MONTH_NAMES = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
+];
+const DAY_LABELS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
-function SlotCard({
-  slot,
+function AvailabilityCalendar({
+  year,
+  month,
+  availableDates,
+  selectedDate,
   onSelect,
 }: {
-  slot: AvailableSlot;
+  year: number;
+  month: number;
+  availableDates: Set<string>;
+  selectedDate: string | null;
   onSelect: (date: string) => void;
 }) {
-  const dateStr = slot.startsAt.split("T")[0];
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
+
+  const firstDow    = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
   return (
-    <div className="border border-[#222] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <p className="text-cream font-medium">{formatSlotDate(slot.startsAt)}</p>
-      <button
-        onClick={() => onSelect(dateStr)}
-        className="shrink-0 h-11 px-5 border border-cream text-cream text-xs tracking-widest uppercase hover:bg-cream hover:text-black transition-colors"
-      >
-        Request This Date
-      </button>
+    <div>
+      <p className="text-cream text-sm font-medium mb-4 tracking-wide">
+        {MONTH_NAMES[month]} {year}
+      </p>
+
+      <div className="grid grid-cols-7 mb-1">
+        {DAY_LABELS.map((d) => (
+          <div key={d} className="text-center text-[10px] text-[#3a3a3a] py-1">{d}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-0.5">
+        {Array.from({ length: firstDow }).map((_, i) => (
+          <div key={`blank-${i}`} />
+        ))}
+
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
+          const dateStr  = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          const isPast   = new Date(year, month, d) < todayMidnight;
+          const isOpen   = availableDates.has(dateStr);
+          const isChosen = selectedDate === dateStr;
+
+          let cls = "text-[#333] cursor-default";
+          if (isPast) {
+            cls = "text-[#252525] cursor-default";
+          } else if (isChosen) {
+            cls = "bg-green-600 text-white cursor-pointer ring-1 ring-green-400";
+          } else if (isOpen) {
+            cls = "bg-green-900/70 text-green-300 hover:bg-green-800/60 cursor-pointer";
+          }
+
+          return (
+            <button
+              key={d}
+              onClick={() => isOpen && !isPast && onSelect(dateStr)}
+              disabled={!isOpen || isPast}
+              aria-label={dateStr}
+              aria-pressed={isChosen}
+              className={`aspect-square flex items-center justify-center rounded text-xs min-h-[40px] transition-all select-none ${cls}`}
+            >
+              {d}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -154,31 +200,56 @@ export function BookingSection() {
     }
   }
 
+  const availableDates = new Set(slots.map((s) => s.startsAt.split("T")[0]));
+  const now = new Date();
+  const calMonths = [0, 1, 2].map((offset) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
+
   return (
     <div>
-      {/* Available Slots */}
+      {/* Availability Calendar */}
       <section className="border-t border-border py-20 px-6">
         <div className="max-w-2xl mx-auto">
           <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Availability</p>
           <h2 className="text-3xl font-light text-cream mb-2">Open Dates</h2>
-          <p className="text-muted text-sm mb-10">Tue – Sat · Austin, TX · Click a date to pre-fill the form below.</p>
+          <p className="text-muted text-sm mb-8">Tue – Sat · Austin, TX · Tap a green date to pre-fill the form below.</p>
 
           {!slotsLoaded ? (
             <div className="py-12 text-center">
               <p className="text-[#444] text-sm">Loading availability…</p>
             </div>
-          ) : slots.length === 0 ? (
-            <div className="py-12 border border-[#1a1a1a] text-center px-6">
-              <p className="text-[#666] text-sm leading-relaxed">
-                No dates currently available — fill out the form below with your preferred date and Miguel will be in touch.
-              </p>
-            </div>
           ) : (
-            <div className="flex flex-col gap-3">
-              {slots.map((slot) => (
-                <SlotCard key={slot.id} slot={slot} onSelect={handleRequestDate} />
-              ))}
-            </div>
+            <>
+              {slots.length === 0 && (
+                <p className="text-[#555] text-xs mb-8">
+                  No dates currently open — fill out the form below with your preferred date.
+                </p>
+              )}
+              {slots.length > 0 && (
+                <div className="flex items-center gap-3 mb-6 text-[10px] text-[#555]">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-green-900/70 inline-block" /> Available
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-green-600 inline-block" /> Selected
+                  </span>
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                {calMonths.map(({ year, month }) => (
+                  <AvailabilityCalendar
+                    key={`${year}-${month}`}
+                    year={year}
+                    month={month}
+                    availableDates={availableDates}
+                    selectedDate={selectedDate}
+                    onSelect={handleRequestDate}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
       </section>
