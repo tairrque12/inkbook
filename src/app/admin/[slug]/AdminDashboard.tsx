@@ -29,6 +29,13 @@ function formatDate(iso: string) {
 
 // ── Consultation Card ────────────────────────────────────────────────────────
 
+function smsHref(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 10) return `sms:+1${digits}`
+  if (digits.length === 11 && digits[0] === '1') return `sms:+${digits}`
+  return `sms:+${digits}`
+}
+
 function ConsultationCard({
   c,
   onAction,
@@ -38,9 +45,10 @@ function ConsultationCard({
   onAction: (id: string, status: ConsultationStatus) => void
   onDelete: (id: string) => void
 }) {
-  const [busy, setBusy]           = useState<ConsultationStatus | null>(null)
+  const [busy, setBusy]                   = useState<ConsultationStatus | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [deleting, setDeleting]   = useState(false)
+  const [deleting, setDeleting]           = useState(false)
+  const [lightbox, setLightbox]           = useState<string | null>(null)
 
   async function act(status: ConsultationStatus) {
     setBusy(status)
@@ -66,7 +74,15 @@ function ConsultationCard({
         <div>
           <p className="text-cream font-medium text-base">{c.customerName}</p>
           <p className="text-[#555] text-xs mt-0.5">
-            {c.customerEmail}{c.customerPhone ? ` · ${c.customerPhone}` : ''}
+            {c.customerEmail}
+            {c.customerPhone && (
+              <>
+                {' · '}
+                <a href={smsHref(c.customerPhone)} className="text-[#C9A96E] hover:text-cream transition-colors">
+                  {c.customerPhone}
+                </a>
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -100,15 +116,38 @@ function ConsultationCard({
       {c.referenceImageUrls.length > 0 && (
         <div className="flex flex-wrap gap-2 border-t border-[#1a1a1a] pt-3">
           {c.referenceImageUrls.map((src, i) => (
-            <a key={i} href={src} target="_blank" rel="noopener noreferrer">
+            <button key={i} onClick={() => setLightbox(src)} className="shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={src}
                 alt={`Reference ${i + 1}`}
-                className="w-20 h-20 object-cover rounded border border-[#333] hover:border-[#555] transition-colors"
+                className="w-20 h-20 object-cover rounded border border-[#333] hover:border-[#C9A96E] transition-colors"
               />
-            </a>
+            </button>
           ))}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightbox}
+            alt="Reference image"
+            className="max-w-full max-h-full object-contain rounded"
+            onClick={e => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-[#888] hover:text-cream text-2xl"
+            aria-label="Close"
+          >
+            ×
+          </button>
         </div>
       )}
 
