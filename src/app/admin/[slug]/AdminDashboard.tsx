@@ -32,11 +32,15 @@ function formatDate(iso: string) {
 function ConsultationCard({
   c,
   onAction,
+  onDelete,
 }: {
   c: Consultation
   onAction: (id: string, status: ConsultationStatus) => void
+  onDelete: (id: string) => void
 }) {
-  const [busy, setBusy] = useState<ConsultationStatus | null>(null)
+  const [busy, setBusy]           = useState<ConsultationStatus | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting]   = useState(false)
 
   async function act(status: ConsultationStatus) {
     setBusy(status)
@@ -44,8 +48,20 @@ function ConsultationCard({
     setBusy(null)
   }
 
+  async function handleDelete() {
+    if (!confirmDelete) {
+      setConfirmDelete(true)
+      setTimeout(() => setConfirmDelete(false), 3000)
+      return
+    }
+    setDeleting(true)
+    await onDelete(c.id)
+    setDeleting(false)
+  }
+
   return (
     <div className="border border-[#222] p-5 flex flex-col gap-4">
+      {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-cream font-medium text-base">{c.customerName}</p>
@@ -53,21 +69,52 @@ function ConsultationCard({
             {c.customerEmail}{c.customerPhone ? ` · ${c.customerPhone}` : ''}
           </p>
         </div>
-        <span className={`text-[10px] tracking-widest uppercase px-2 py-1 border rounded ${STATUS_COLORS[c.status] ?? ''}`}>
-          {c.status}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`text-[10px] tracking-widest uppercase px-2 py-1 border rounded ${STATUS_COLORS[c.status] ?? ''}`}>
+            {c.status}
+          </span>
+          <button
+            onClick={handleDelete}
+            disabled={deleting || busy !== null}
+            className={`h-8 px-2 text-xs border transition-colors disabled:opacity-40 ${
+              confirmDelete
+                ? 'border-red-700 text-red-400 bg-red-900/20'
+                : 'border-[#2a2a2a] text-[#555] hover:border-red-800 hover:text-red-400'
+            }`}
+          >
+            {deleting ? '…' : confirmDelete ? 'Confirm?' : '×'}
+          </button>
+        </div>
       </div>
 
+      {/* Details */}
       <div className="flex flex-col gap-2 text-sm">
         <p className="text-cream leading-relaxed">{c.tattooIdea}</p>
-        {c.placement   && <p className="text-[#888]"><span className="text-[#555]">Placement:</span> {c.placement}</p>}
-        {c.budget      && <p className="text-[#888]"><span className="text-[#555]">Budget:</span> {c.budget}</p>}
+        {c.placement    && <p className="text-[#888]"><span className="text-[#555]">Placement:</span> {c.placement}</p>}
+        {c.budget       && <p className="text-[#888]"><span className="text-[#555]">Budget:</span> {c.budget}</p>}
         {c.preferredDate && <p className="text-[#888]"><span className="text-[#555]">Preferred date:</span> {c.preferredDate}</p>}
-        {c.message     && <p className="text-[#666] text-xs leading-relaxed border-t border-[#1a1a1a] pt-2">{c.message}</p>}
+        {c.message      && <p className="text-[#666] text-xs leading-relaxed border-t border-[#1a1a1a] pt-2">{c.message}</p>}
       </div>
+
+      {/* Reference images */}
+      {c.referenceImageUrls.length > 0 && (
+        <div className="flex flex-wrap gap-2 border-t border-[#1a1a1a] pt-3">
+          {c.referenceImageUrls.map((src, i) => (
+            <a key={i} href={src} target="_blank" rel="noopener noreferrer">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`Reference ${i + 1}`}
+                className="w-20 h-20 object-cover rounded border border-[#333] hover:border-[#555] transition-colors"
+              />
+            </a>
+          ))}
+        </div>
+      )}
 
       <p className="text-[#444] text-xs">Submitted {formatDate(c.createdAt)}</p>
 
+      {/* Action buttons */}
       {c.status !== 'confirmed' && c.status !== 'declined' && (
         <div className="flex gap-2 flex-wrap border-t border-[#1a1a1a] pt-4">
           {c.status === 'pending' && (
@@ -274,6 +321,11 @@ export function AdminDashboard({ slug }: { slug: string; artistName?: string }) 
     await fetchConsultations()
   }
 
+  async function handleDeleteConsultation(id: string) {
+    await fetch(`/api/admin/${slug}/consultations/${id}`, { method: 'DELETE' })
+    await fetchConsultations()
+  }
+
   async function handleLogout() {
     await fetch(`/api/admin/${slug}/logout`, { method: 'POST' })
     router.refresh()
@@ -347,7 +399,7 @@ export function AdminDashboard({ slug }: { slug: string; artistName?: string }) 
           ) : (
             <div className="flex flex-col gap-4">
               {displayed.map(c => (
-                <ConsultationCard key={c.id} c={c} onAction={handleConsultationAction} />
+                <ConsultationCard key={c.id} c={c} onAction={handleConsultationAction} onDelete={handleDeleteConsultation} />
               ))}
             </div>
           )}

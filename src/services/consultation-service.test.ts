@@ -25,10 +25,12 @@ function makeDb(overrides: {
   insertData?: object | null
   insertError?: { message: string } | null
   updateError?: { message: string } | null
+  deleteError?: { message: string } | null
 } = {}) {
-  const listResult = { data: 'listData' in overrides ? overrides.listData : [makeRow()], error: overrides.listError ?? null }
+  const listResult   = { data: 'listData' in overrides ? overrides.listData : [makeRow()], error: overrides.listError ?? null }
   const insertResult = { data: 'insertData' in overrides ? overrides.insertData : makeRow(), error: overrides.insertError ?? null }
   const updateResult = { error: overrides.updateError ?? null }
+  const deleteResult = { error: overrides.deleteError ?? null }
 
   return {
     from: vi.fn().mockReturnValue({
@@ -44,6 +46,9 @@ function makeDb(overrides: {
       }),
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue(updateResult),
+      }),
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue(deleteResult),
       }),
     }),
   }
@@ -150,6 +155,26 @@ describe('ConsultationService', () => {
     it('throws when update fails', async () => {
       const svc = new ConsultationService(makeDb({ updateError: { message: 'not found' } }) as never)
       await expect(svc.updateStatus('cons-1', 'approved')).rejects.toThrow('not found')
+    })
+  })
+
+  describe('delete', () => {
+    it('calls delete on the consultations table with the given id', async () => {
+      const db = makeDb()
+      const svc = new ConsultationService(db as never)
+      await svc.delete('cons-1')
+      const fromResult = db.from.mock.results[0].value
+      expect(fromResult.delete).toHaveBeenCalled()
+      expect(fromResult.delete().eq).toHaveBeenCalledWith('id', 'cons-1')
+    })
+
+    it('resolves without error on success', async () => {
+      await expect(service.delete('cons-1')).resolves.toBeUndefined()
+    })
+
+    it('throws when delete fails', async () => {
+      const svc = new ConsultationService(makeDb({ deleteError: { message: 'delete failed' } }) as never)
+      await expect(svc.delete('cons-1')).rejects.toThrow('delete failed')
     })
   })
 })

@@ -6,6 +6,26 @@ import { getArtist } from '@/lib/mock-artists'
 
 const VALID_STATUSES: ConsultationStatus[] = ['pending', 'approved', 'declined', 'confirmed']
 
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ slug: string; id: string }> },
+) {
+  const { slug, id } = await params
+
+  if (!getArtist(slug)) return Response.json({ error: 'Artist not found' }, { status: 404 })
+  if (!await requireAuth(req, slug)) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const db = getAdminSupabase()
+    const consultations = new ConsultationService(db as never)
+    await consultations.delete(id)
+    return Response.json({ ok: true })
+  } catch (err) {
+    console.error('[admin] consultation delete error:', err)
+    return Response.json({ error: 'Failed to delete consultation' }, { status: 500 })
+  }
+}
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ slug: string; id: string }> },

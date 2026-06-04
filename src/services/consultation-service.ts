@@ -54,6 +54,7 @@ interface SupabaseClient {
     }
     insert(row: object): { select(): { single(): Promise<{ data: ConsultationRow | null; error: { message: string } | null }> } }
     update(patch: object): { eq(col: string, val: string): Promise<{ error: { message: string } | null }> }
+    delete(): { eq(col: string, val: string): Promise<{ error: { message: string } | null }> }
   }
 }
 
@@ -118,6 +119,15 @@ export class ConsultationService {
     const { error } = await this.db
       .from('consultations')
       .update({ status })
+      .eq('id', id)
+
+    if (error) throw new Error(error.message)
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await this.db
+      .from('consultations')
+      .delete()
       .eq('id', id)
 
     if (error) throw new Error(error.message)

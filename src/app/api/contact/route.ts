@@ -52,7 +52,7 @@ export async function POST(req: Request) {
         budget,
         preferredDate,
         message,
-        referenceImageUrls: [],  // images stored in email; URLs not available at this stage
+        referenceImageUrls: images.map(img => `data:${img.type};base64,${img.data}`),
       });
     } catch (err) {
       console.error("[inkbook] Failed to write consultation to Supabase:", err);
