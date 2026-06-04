@@ -214,7 +214,7 @@ export function BookingSection() {
         <div className="max-w-2xl mx-auto">
           <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Availability</p>
           <h2 className="text-3xl font-light text-cream mb-2">Open Dates</h2>
-          <p className="text-muted text-sm mb-8">Tue – Sat · Austin, TX · Tap a green date to pre-fill the form below.</p>
+          <p className="text-muted text-sm mb-8">Austin, TX · Tap a green date to pre-fill the form below.</p>
 
           {!slotsLoaded ? (
             <div className="py-12 text-center">
