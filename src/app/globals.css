@@ -52,6 +52,31 @@
   }
 }
 
+/* Smooth anchor scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hero splash entrance — CSS-only, fires before JS hydrates */
+@keyframes hero-enter {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-line-1 { animation: hero-enter 0.55s ease-out  60ms both; }
+.hero-line-2 { animation: hero-enter 0.55s ease-out 180ms both; }
+.hero-line-3 { animation: hero-enter 0.55s ease-out 290ms both; }
+.hero-line-4 { animation: hero-enter 0.55s ease-out 390ms both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-line-1,
+  .hero-line-2,
+  .hero-line-3,
+  .hero-line-4 {
+    animation: none;
+  }
+}
+
 /* Scroll reveal */
 [data-reveal] {
   opacity: 0;

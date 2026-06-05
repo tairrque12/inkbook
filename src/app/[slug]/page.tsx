@@ -31,22 +31,55 @@ export default async function ArtistPage({
         </a>
       </nav>
 
-      {/* Hero */}
-      <section data-hero className="px-6 py-20 md:py-28 max-w-4xl mx-auto">
-        <div data-reveal data-reveal-delay="80" className="flex items-start gap-2 mb-6">
+      {/* Splash hero — full viewport */}
+      <section data-hero className="relative min-h-screen flex flex-col justify-center px-6 md:px-16 border-b border-border overflow-hidden">
+        <div className="max-w-5xl">
+          <p className="hero-line-1 text-[10px] tracking-[0.45em] text-[#3a3a3a] uppercase mb-8">
+            Tattoo Artist &nbsp;·&nbsp; {artist.location}
+          </p>
+          <h1 className="hero-line-2 font-light tracking-tight text-cream leading-none mb-8 md:mb-10"
+              style={{ fontSize: "clamp(3.5rem, 13vw, 8.5rem)" }}>
+            {artist.name}
+          </h1>
+          <div className="hero-line-3 flex items-center gap-5 mb-12">
+            <div className="w-8 h-px bg-[#2a2a2a] shrink-0" />
+            <p className="text-muted text-sm md:text-base font-light">
+              Custom tattoo art in {artist.location}.
+            </p>
+          </div>
+          <div className="hero-line-4">
+            <a
+              href="#book"
+              className="inline-flex items-center h-12 px-8 border border-cream/60 text-cream text-[11px] tracking-widest uppercase hover:bg-cream hover:text-black transition-colors"
+            >
+              Book a Consultation
+            </a>
+          </div>
+        </div>
+
+        {/* Scroll cue */}
+        <div className="hero-line-4 absolute bottom-8 left-6 md:left-16 flex items-center gap-3 text-[#2a2a2a]">
+          <div className="h-px w-5 bg-current" />
+          <span className="text-[9px] tracking-[0.45em] uppercase">Scroll</span>
+        </div>
+      </section>
+
+      {/* Artist — bio & styles */}
+      <section className="px-6 py-20 md:py-28 max-w-4xl mx-auto">
+        <div data-reveal className="flex items-start gap-2 mb-6">
           <span className="inline-block h-2 w-2 rounded-full bg-green-500 mt-1.5 animate-pulse" />
           <span className="text-xs text-muted tracking-wider uppercase">Accepting new clients</span>
         </div>
-        <h1 data-reveal data-reveal-delay="160" className="text-5xl md:text-7xl font-light tracking-tight text-cream mb-4">
+        <p data-reveal data-reveal-delay="80" className="text-5xl md:text-7xl font-light tracking-tight text-cream mb-4">
           {artist.name}
-        </h1>
-        <p data-reveal data-reveal-delay="220" className="text-gold text-sm tracking-[0.2em] uppercase mb-8">
+        </p>
+        <p data-reveal data-reveal-delay="140" className="text-gold text-sm tracking-[0.2em] uppercase mb-8">
           Tattoo Artist · {artist.location}
         </p>
-        <p data-reveal data-reveal-delay="280" className="text-muted text-lg max-w-2xl leading-relaxed font-light">
+        <p data-reveal data-reveal-delay="200" className="text-muted text-lg max-w-2xl leading-relaxed font-light">
           {artist.bio}
         </p>
-        <div data-reveal data-reveal-delay="340" className="flex flex-wrap gap-2 mt-8">
+        <div data-reveal data-reveal-delay="260" className="flex flex-wrap gap-2 mt-8">
           {artist.styles.map((s) => (
             <span
               key={s}
