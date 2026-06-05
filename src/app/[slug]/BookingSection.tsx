@@ -212,10 +212,13 @@ export function BookingSection() {
       {/* Availability Calendar */}
       <section className="border-t border-border py-20 px-6">
         <div className="max-w-2xl mx-auto">
-          <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Availability</p>
-          <h2 className="text-3xl font-light text-cream mb-2">Open Dates</h2>
-          <p className="text-muted text-sm mb-8">Austin, TX · Tap a green date to pre-fill the form below.</p>
+          <div data-reveal>
+            <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Availability</p>
+            <h2 className="text-3xl font-light text-cream mb-2">Open Dates</h2>
+            <p className="text-muted text-sm mb-8">Austin, TX · Tap a green date to pre-fill the form below.</p>
+          </div>
 
+          <div data-reveal data-reveal-delay="80">
           {!slotsLoaded ? (
             <div className="py-12 text-center">
               <p className="text-[#444] text-sm">Loading availability…</p>
@@ -251,18 +254,22 @@ export function BookingSection() {
               </div>
             </>
           )}
+          </div>
         </div>
       </section>
 
       {/* Booking Form */}
       <section ref={formRef} className="border-t border-border py-20 px-6 bg-card">
         <div className="max-w-2xl mx-auto">
-          <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Get in touch</p>
-          <h2 className="text-3xl font-light text-cream mb-2">Book a Free Consultation Today!</h2>
-          <p className="text-muted text-sm mb-10">
-            Tell me about your idea. I&apos;ll get back to you within 24 hours.
-          </p>
+          <div data-reveal>
+            <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Get in touch</p>
+            <h2 className="text-3xl font-light text-cream mb-2">Book a Free Consultation Today!</h2>
+            <p className="text-muted text-sm mb-10">
+              Tell me about your idea. I&apos;ll get back to you within 24 hours.
+            </p>
+          </div>
 
+          <div data-reveal data-reveal-delay="80">
           {submitState === "success" ? (
             <div className="border border-green-800 bg-green-950/30 rounded p-6 text-center">
               <p className="text-green-400 text-lg font-medium mb-1">Request sent.</p>
@@ -417,6 +424,7 @@ export function BookingSection() {
               </button>
             </form>
           )}
+          </div>
         </div>
       </section>
     </div>

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getArtist } from "@/lib/mock-artists";
 import { BookingSection } from "./BookingSection";
 import { PaymentGrid } from "./PaymentGrid";
+import { ScrollReveal } from "./ScrollReveal";
 
 export default async function ArtistPage({
   params,
@@ -31,20 +32,20 @@ export default async function ArtistPage({
 
       {/* Hero */}
       <section className="px-6 py-20 md:py-28 max-w-4xl mx-auto">
-        <div className="flex items-start gap-2 mb-6">
+        <div data-reveal data-reveal-delay="80" className="flex items-start gap-2 mb-6">
           <span className="inline-block h-2 w-2 rounded-full bg-green-500 mt-1.5 animate-pulse" />
           <span className="text-xs text-muted tracking-wider uppercase">Accepting new clients</span>
         </div>
-        <h1 className="text-5xl md:text-7xl font-light tracking-tight text-cream mb-4">
+        <h1 data-reveal data-reveal-delay="160" className="text-5xl md:text-7xl font-light tracking-tight text-cream mb-4">
           {artist.name}
         </h1>
-        <p className="text-gold text-sm tracking-[0.2em] uppercase mb-8">
+        <p data-reveal data-reveal-delay="220" className="text-gold text-sm tracking-[0.2em] uppercase mb-8">
           Tattoo Artist · {artist.location}
         </p>
-        <p className="text-muted text-lg max-w-2xl leading-relaxed font-light">
+        <p data-reveal data-reveal-delay="280" className="text-muted text-lg max-w-2xl leading-relaxed font-light">
           {artist.bio}
         </p>
-        <div className="flex flex-wrap gap-2 mt-8">
+        <div data-reveal data-reveal-delay="340" className="flex flex-wrap gap-2 mt-8">
           {artist.styles.map((s) => (
             <span
               key={s}
@@ -62,7 +63,7 @@ export default async function ArtistPage({
         className="border-t border-border py-20 px-6"
       >
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-end justify-between mb-12">
+          <div data-reveal className="flex items-end justify-between mb-12">
             <div>
               <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Portfolio</p>
               <h2 className="text-3xl font-light text-cream">The Work</h2>
@@ -72,7 +73,7 @@ export default async function ArtistPage({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          <div data-reveal data-reveal-delay="80" className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
             {artist.portfolio.map((item) => (
               <div key={item.id} className="group relative">
                 {/* Photo */}
@@ -123,11 +124,13 @@ export default async function ArtistPage({
       {/* Pricing guide */}
       <section className="border-t border-border py-16 px-6 bg-card">
         <div className="max-w-4xl mx-auto">
-          <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Pricing</p>
-          <h2 className="text-3xl font-light text-cream mb-2">What to Expect</h2>
-          <p className="text-muted text-sm mb-10">No surprises. Every tier below includes a required deposit to hold your date.</p>
+          <div data-reveal>
+            <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">Pricing</p>
+            <h2 className="text-3xl font-light text-cream mb-2">What to Expect</h2>
+            <p className="text-muted text-sm mb-10">No surprises. Every tier below includes a required deposit to hold your date.</p>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div data-reveal data-reveal-delay="80" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {/* Small */}
             <div className="border border-border p-5 flex flex-col gap-3">
               <p className="text-gold text-xs tracking-widest uppercase">Small</p>
@@ -193,12 +196,14 @@ export default async function ArtistPage({
             </div>
           </div>
 
-          <p className="text-[#444] text-xs mt-8">
+          <p data-reveal data-reveal-delay="80" className="text-[#444] text-xs mt-8">
             All prices are estimates. Final cost depends on complexity, detail level, and placement.
             Deposits are applied to the total cost of your tattoo.
           </p>
 
-          <PaymentGrid />
+          <div data-reveal data-reveal-delay="120">
+            <PaymentGrid />
+          </div>
         </div>
       </section>
 
@@ -206,6 +211,8 @@ export default async function ArtistPage({
       <div id="book">
         <BookingSection />
       </div>
+
+      <ScrollReveal />
 
       {/* Footer */}
       <footer className="border-t border-border px-6 py-10">
