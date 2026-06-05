@@ -4,6 +4,7 @@ import { getArtist } from "@/lib/mock-artists";
 import { BookingSection } from "./BookingSection";
 import { PaymentGrid } from "./PaymentGrid";
 import { ScrollReveal } from "./ScrollReveal";
+import { StickyHeader } from "./StickyHeader";
 
 export default async function ArtistPage({
   params,
@@ -31,7 +32,7 @@ export default async function ArtistPage({
       </nav>
 
       {/* Hero */}
-      <section className="px-6 py-20 md:py-28 max-w-4xl mx-auto">
+      <section data-hero className="px-6 py-20 md:py-28 max-w-4xl mx-auto">
         <div data-reveal data-reveal-delay="80" className="flex items-start gap-2 mb-6">
           <span className="inline-block h-2 w-2 rounded-full bg-green-500 mt-1.5 animate-pulse" />
           <span className="text-xs text-muted tracking-wider uppercase">Accepting new clients</span>
@@ -213,6 +214,7 @@ export default async function ArtistPage({
       </div>
 
       <ScrollReveal />
+      <StickyHeader artistName={artist.name} />
 
       {/* Footer */}
       <footer className="border-t border-border px-6 py-10">
