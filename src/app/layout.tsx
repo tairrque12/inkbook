@@ -10,8 +10,8 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "inkbook — Miguel",
-  description: "Custom tattoo art by Miguel. View the portfolio and book your consultation.",
+  title: "inkbook",
+  description: "Professional booking pages for tattoo artists.",
 };
 
 export default function RootLayout({
