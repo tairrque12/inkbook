@@ -18,7 +18,7 @@ export interface ArtistProfile {
   portfolio: PortfolioItem[];
 }
 
-const ARTISTS: ArtistProfile[] = [
+export const ARTISTS: ArtistProfile[] = [
   {
     slug: "miguel",
     name: "Miguel",

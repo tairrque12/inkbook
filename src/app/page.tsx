@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { WaitlistForm } from "./WaitlistForm";
+import { SearchArtists } from "./SearchArtists";
 
 export const metadata: Metadata = {
   title: "inkbook — Booking pages for tattoo artists",
@@ -132,6 +133,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Artist Search */}
+      <SearchArtists />
 
       {/* Pricing */}
       <section className="py-24 px-6 md:px-16 border-b border-border bg-card">

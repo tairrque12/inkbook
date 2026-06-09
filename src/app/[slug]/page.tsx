@@ -1,11 +1,35 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getArtist } from "@/lib/mock-artists";
+import { createClient } from "@supabase/supabase-js";
+import { getArtist, type ArtistProfile } from "@/lib/mock-artists";
 import { BookingSection } from "./BookingSection";
 import { PaymentGrid } from "./PaymentGrid";
 import { ScrollReveal } from "./ScrollReveal";
 import { StickyHeader } from "./StickyHeader";
+
+async function getArtistProfile(slug: string): Promise<ArtistProfile | undefined> {
+  // Try Supabase first
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (url && key) {
+    const db = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+    const { data } = await db.from("artists").select("*").eq("slug", slug).single();
+    if (data) {
+      return {
+        slug: data.slug,
+        name: data.name,
+        location: data.location || "",
+        bio: data.bio || "",
+        styles: data.styles || [],
+        instagram: data.instagram || "",
+        portfolio: [],
+      };
+    }
+  }
+  // Fall back to mock data
+  return getArtist(slug);
+}
 
 export default async function ArtistPage({
   params,
@@ -13,7 +37,7 @@ export default async function ArtistPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const artist = getArtist(slug);
+  const artist = await getArtistProfile(slug);
 
   if (!artist) notFound();
 

@@ -46,7 +46,7 @@ export function SignupForm() {
         return;
       }
 
-      router.push(`/welcome/${data.slug}`);
+      router.push(`/onboarding/${data.slug}/plan`);
     } catch {
       setError("Network error. Please try again.");
     } finally {
