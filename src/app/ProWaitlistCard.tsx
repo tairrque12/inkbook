@@ -9,6 +9,7 @@ const PRO_FEATURES = [
   "Priority support",
   { label: "AI booking agent", sub: "handles client chats & bookings for you" },
   { label: "Tattoo visualizer", sub: "customers preview your art on their body before the appointment" },
+  { label: "Done-for-you marketing", sub: "we run campaigns on your behalf to grow your client base" },
 ];
 
 export function ProWaitlistCard() {

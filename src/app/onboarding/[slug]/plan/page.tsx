@@ -19,6 +19,7 @@ const PRO_FEATURES = [
   "Priority support",
   "AI booking agent — handles client chats & bookings for you",
   "Tattoo visualizer — customers preview your art on their body before the appointment",
+  "Done-for-you marketing — we run campaigns on your behalf to grow your client base",
 ];
 
 export default function PlanPage() {
@@ -107,6 +108,11 @@ export default function PlanPage() {
                         <>
                           <span className="text-gold">Tattoo visualizer</span>
                           <span className="text-muted"> — customers preview your art on their body before the appointment</span>
+                        </>
+                      ) : f.startsWith("Done") ? (
+                        <>
+                          <span className="text-gold">Done-for-you marketing</span>
+                          <span className="text-muted"> — we run campaigns on your behalf to grow your client base</span>
                         </>
                       ) : (
                         <span className="text-muted">{f}</span>
