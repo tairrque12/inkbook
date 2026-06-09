@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { WaitlistForm } from "./WaitlistForm";
 
 export const metadata: Metadata = {
@@ -243,12 +244,12 @@ export default function LandingPage() {
           <div className="flex items-center gap-4">
             <span>© 2026 ink-book.com</span>
             <span className="text-border">·</span>
-            <a
+            <Link
               href="/miguel"
               className="hover:text-cream transition-colors"
             >
               See a live example →
-            </a>
+            </Link>
           </div>
         </div>
       </footer>
