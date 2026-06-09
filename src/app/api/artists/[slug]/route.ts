@@ -32,7 +32,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const allowed = ["location", "bio", "instagram", "styles", "plan", "onboarding_complete", "name"];
+  const allowed = ["location", "bio", "instagram", "styles", "plan", "onboarding_complete", "name", "portfolio", "pricing", "available_dates"];
   const update: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) update[key] = body[key];

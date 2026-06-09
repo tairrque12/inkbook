@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ProfileForm } from "./ProfileForm";
+import { PricingForm } from "./PricingForm";
 
 export const metadata: Metadata = {
-  title: "Set up your profile — inkbook",
+  title: "Set your pricing — inkbook",
 };
 
-export default async function ProfilePage({
+export default async function PricingPage({
   params,
   searchParams,
 }: {
@@ -26,15 +26,15 @@ export default async function ProfilePage({
 
       <div className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-lg">
-          <p className="text-[10px] tracking-[0.45em] uppercase text-muted mb-4">Step 3 of 6</p>
+          <p className="text-[10px] tracking-[0.45em] uppercase text-muted mb-4">Step 5 of 6</p>
           <h1 className="text-3xl md:text-4xl font-light text-cream mb-2">
-            Set up your profile.
+            Set your pricing.
           </h1>
           <p className="text-muted text-sm font-light mb-10 leading-relaxed">
-            This is what clients see when they visit your booking page.
+            Give clients a sense of what to expect. Add up to 4 tiers — this is optional and you can update it anytime.
           </p>
 
-          <ProfileForm slug={slug} plan={plan} />
+          <PricingForm slug={slug} plan={plan} />
         </div>
       </div>
     </main>

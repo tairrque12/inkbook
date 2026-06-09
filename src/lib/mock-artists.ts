@@ -1,11 +1,19 @@
 export interface PortfolioItem {
   id: string;
-  title: string;
-  style: string;
-  placement: string;
-  cost: number;
-  durationHours: number;
   imageUrl: string;
+  title?: string;
+  style?: string;
+  placement?: string;
+  cost?: number;
+  durationHours?: number;
+}
+
+export interface PricingTier {
+  label: string;
+  price: string;
+  deposit: string;
+  hours: string;
+  description: string;
 }
 
 export interface ArtistProfile {
@@ -16,6 +24,8 @@ export interface ArtistProfile {
   styles: string[];
   instagram: string;
   portfolio: PortfolioItem[];
+  pricing?: PricingTier[];
+  availableDates?: string[];
 }
 
 export const ARTISTS: ArtistProfile[] = [

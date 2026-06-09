@@ -21,7 +21,7 @@ export default function SignupPage() {
       <div className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
           <p className="text-[10px] tracking-[0.45em] uppercase text-muted mb-4">
-            Step 1 of 3
+            Step 1 of 6
           </p>
           <h1 className="text-3xl md:text-4xl font-light text-cream mb-2">
             Create your account.

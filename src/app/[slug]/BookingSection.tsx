@@ -85,7 +85,7 @@ function AvailabilityCalendar({
   );
 }
 
-export function BookingSection() {
+export function BookingSection({ availableDates }: { availableDates?: string[] }) {
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [slotsLoaded, setSlotsLoaded] = useState(false);
 
@@ -109,6 +109,17 @@ export function BookingSection() {
   const formRef = useRef<HTMLElement>(null);
 
   const fetchSlots = useCallback(() => {
+    if (availableDates !== undefined) {
+      const synthetic: AvailableSlot[] = availableDates.map((d) => ({
+        id: d,
+        startsAt: `${d}T09:00:00`,
+        endsAt: `${d}T17:00:00`,
+        slotType: "available",
+      }));
+      setSlots(synthetic);
+      setSlotsLoaded(true);
+      return;
+    }
     fetch("/api/availability/miguel")
       .then((r) => r.json())
       .then((data: { slots?: AvailableSlot[] }) => {
@@ -116,7 +127,7 @@ export function BookingSection() {
         setSlotsLoaded(true);
       })
       .catch(() => setSlotsLoaded(true));
-  }, []);
+  }, [availableDates]);
 
   useEffect(() => { fetchSlots() }, [fetchSlots]);
 
@@ -200,7 +211,7 @@ export function BookingSection() {
     }
   }
 
-  const availableDates = new Set(slots.map((s) => s.startsAt.split("T")[0]));
+  const availableDatesSet = new Set(slots.map((s) => s.startsAt.split("T")[0]));
   const now = new Date();
   const calMonths = [0, 1, 2].map((offset) => {
     const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
@@ -246,7 +257,7 @@ export function BookingSection() {
                     key={`${year}-${month}`}
                     year={year}
                     month={month}
-                    availableDates={availableDates}
+                    availableDates={availableDatesSet}
                     selectedDate={selectedDate}
                     onSelect={handleRequestDate}
                   />

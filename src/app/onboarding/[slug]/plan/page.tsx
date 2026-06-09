@@ -30,7 +30,7 @@ export default function PlanPage() {
 
       <div className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-2xl">
-          <p className="text-[10px] tracking-[0.45em] uppercase text-muted mb-4">Step 2 of 3</p>
+          <p className="text-[10px] tracking-[0.45em] uppercase text-muted mb-4">Step 2 of 6</p>
           <h1 className="text-3xl md:text-4xl font-light text-cream mb-2">Choose your plan.</h1>
           <p className="text-muted text-sm font-light mb-12">You can upgrade anytime.</p>
 

@@ -46,7 +46,7 @@ export function ProfileForm({ slug, plan }: { slug: string; plan: string }) {
         return;
       }
 
-      router.push(`/${slug}`);
+      router.push(`/onboarding/${slug}/portfolio?plan=${plan}`);
     } catch {
       setError("Network error. Please try again.");
     } finally {

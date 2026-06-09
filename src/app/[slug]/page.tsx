@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-import { getArtist, type ArtistProfile } from "@/lib/mock-artists";
+import { getArtist, type ArtistProfile, type PricingTier } from "@/lib/mock-artists";
 import { BookingSection } from "./BookingSection";
 import { PaymentGrid } from "./PaymentGrid";
 import { ScrollReveal } from "./ScrollReveal";
@@ -23,7 +23,16 @@ async function getArtistProfile(slug: string): Promise<ArtistProfile | undefined
         bio: data.bio || "",
         styles: data.styles || [],
         instagram: data.instagram || "",
-        portfolio: [],
+        portfolio: (data.portfolio ?? []).map(
+          (item: { id?: string; imageUrl: string }, idx: number) => ({
+            id: item.id ?? `db-${idx}`,
+            imageUrl: item.imageUrl,
+          })
+        ),
+        pricing: data.pricing && (data.pricing as PricingTier[]).length > 0
+          ? (data.pricing as PricingTier[])
+          : undefined,
+        availableDates: data.available_dates ?? [],
       };
     }
   }
@@ -135,52 +144,63 @@ export default async function ArtistPage({
           <div data-reveal data-reveal-delay="80" className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
             {artist.portfolio.map((item) => (
               <div key={item.id} className="group relative">
-                {/* Photo */}
                 <div className="aspect-[3/4] w-full relative overflow-hidden bg-zinc-900">
                   <Image
                     src={item.imageUrl}
-                    alt={item.title}
+                    alt={item.title ?? "Portfolio piece"}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, 33vw"
                   />
                 </div>
 
-                {/* Caption */}
-                <div className="pt-3 pb-1">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div>
-                      <p className="text-cream text-sm font-medium leading-tight">{item.title}</p>
-                      <p className="text-muted text-xs mt-0.5">{item.placement}</p>
+                {(item.title || item.cost !== undefined) && (
+                  <div className="pt-3 pb-1">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        {item.title && <p className="text-cream text-sm font-medium leading-tight">{item.title}</p>}
+                        {item.placement && <p className="text-muted text-xs mt-0.5">{item.placement}</p>}
+                      </div>
+                      {item.style && (
+                        <span className="text-[10px] text-gold tracking-widest uppercase shrink-0 mt-0.5">
+                          {item.style}
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[10px] text-gold tracking-widest uppercase shrink-0 mt-0.5">
-                      {item.style}
-                    </span>
+                    {item.cost !== undefined && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-cream text-sm font-semibold">
+                          ${item.cost.toLocaleString()}
+                        </span>
+                        {item.durationHours !== undefined && (
+                          <>
+                            <span className="text-border">·</span>
+                            <span className="text-muted text-xs">
+                              {item.durationHours >= 12
+                                ? `${Math.round(item.durationHours / 8)} days`
+                                : `${item.durationHours}h`}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-cream text-sm font-semibold">
-                      ${item.cost.toLocaleString()}
-                    </span>
-                    <span className="text-border">·</span>
-                    <span className="text-muted text-xs">
-                      {item.durationHours >= 12
-                        ? `${Math.round(item.durationHours / 8)} days`
-                        : `${item.durationHours}h`}
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
 
-          <p className="text-[#444] text-xs text-center mt-10">
-            All prices shown are final settled amounts for completed work.
-            Estimates vary by complexity and revision rounds.
-          </p>
+          {artist.portfolio.some((p) => p.cost !== undefined) && (
+            <p className="text-[#444] text-xs text-center mt-10">
+              All prices shown are final settled amounts for completed work.
+              Estimates vary by complexity and revision rounds.
+            </p>
+          )}
         </div>
       </section>
 
-      {/* Pricing guide */}
+      {/* Pricing guide — shown if artist has pricing set */}
+      {(artist.pricing && artist.pricing.length > 0) || artist.slug === "miguel" ? (
       <section className="border-t border-border py-16 px-6 bg-card">
         <div className="max-w-4xl mx-auto">
           <div data-reveal>
@@ -189,70 +209,77 @@ export default async function ArtistPage({
             <p className="text-muted text-sm mb-10">No surprises. Every tier below includes a required deposit to hold your date.</p>
           </div>
 
-          <div data-reveal data-reveal-delay="80" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Small */}
-            <div className="border border-border p-5 flex flex-col gap-3">
-              <p className="text-gold text-xs tracking-widest uppercase">Small</p>
-              <div>
-                <p className="text-cream text-2xl font-light">$100</p>
-                <p className="text-muted text-xs mt-0.5">minimum</p>
-              </div>
-              <div className="border-t border-border pt-3 flex flex-col gap-1.5">
-                <p className="text-muted text-xs">1–2 hours</p>
-                <p className="text-muted text-xs">$50 deposit to book</p>
-              </div>
-              <p className="text-[#555] text-xs leading-relaxed">
-                Simple symbols, words, dates, minimal designs, small fine line pieces
-              </p>
-            </div>
-
-            {/* Half Day */}
-            <div className="border border-border p-5 flex flex-col gap-3">
-              <p className="text-gold text-xs tracking-widest uppercase">Half Day</p>
-              <div>
-                <p className="text-cream text-2xl font-light">$400–600</p>
-                <p className="text-muted text-xs mt-0.5">estimated</p>
-              </div>
-              <div className="border-t border-border pt-3 flex flex-col gap-1.5">
-                <p className="text-muted text-xs">3–5 hours</p>
-                <p className="text-muted text-xs">$100 deposit to book</p>
-              </div>
-              <p className="text-[#555] text-xs leading-relaxed">
-                Detailed forearm pieces, portraits, animals, medium geometric work
-              </p>
-            </div>
-
-            {/* Full Day */}
-            <div className="border border-border p-5 flex flex-col gap-3">
-              <p className="text-gold text-xs tracking-widest uppercase">Full Day</p>
-              <div>
-                <p className="text-cream text-2xl font-light">$800–1,000</p>
-                <p className="text-muted text-xs mt-0.5">estimated</p>
-              </div>
-              <div className="border-t border-border pt-3 flex flex-col gap-1.5">
-                <p className="text-muted text-xs">6+ hours</p>
-                <p className="text-muted text-xs">$100 deposit to book</p>
-              </div>
-              <p className="text-[#555] text-xs leading-relaxed">
-                Full inner/outer arm, upper arm, large back pieces, chest pieces, full thigh pieces
-              </p>
-            </div>
-
-            {/* Full Sleeve */}
-            <div className="border border-border p-5 flex flex-col gap-3">
-              <p className="text-gold text-xs tracking-widest uppercase">Full Sleeve</p>
-              <div>
-                <p className="text-cream text-2xl font-light">$800–1,000</p>
-                <p className="text-muted text-xs mt-0.5">per session</p>
-              </div>
-              <div className="border-t border-border pt-3 flex flex-col gap-1.5">
-                <p className="text-muted text-xs">4–5 full day sessions</p>
-                <p className="text-muted text-xs">$100 deposit per session</p>
-              </div>
-              <p className="text-[#555] text-xs leading-relaxed">
-                Discounts may be available — Miguel will discuss directly during your consultation.
-              </p>
-            </div>
+          <div data-reveal data-reveal-delay="80" className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${artist.slug === "miguel" ? "md:grid-cols-4" : ""}`}>
+            {artist.slug === "miguel" ? (
+              <>
+                <div className="border border-border p-5 flex flex-col gap-3">
+                  <p className="text-gold text-xs tracking-widest uppercase">Small</p>
+                  <div>
+                    <p className="text-cream text-2xl font-light">$100</p>
+                    <p className="text-muted text-xs mt-0.5">minimum</p>
+                  </div>
+                  <div className="border-t border-border pt-3 flex flex-col gap-1.5">
+                    <p className="text-muted text-xs">1–2 hours</p>
+                    <p className="text-muted text-xs">$50 deposit to book</p>
+                  </div>
+                  <p className="text-[#555] text-xs leading-relaxed">Simple symbols, words, dates, minimal designs, small fine line pieces</p>
+                </div>
+                <div className="border border-border p-5 flex flex-col gap-3">
+                  <p className="text-gold text-xs tracking-widest uppercase">Half Day</p>
+                  <div>
+                    <p className="text-cream text-2xl font-light">$400–600</p>
+                    <p className="text-muted text-xs mt-0.5">estimated</p>
+                  </div>
+                  <div className="border-t border-border pt-3 flex flex-col gap-1.5">
+                    <p className="text-muted text-xs">3–5 hours</p>
+                    <p className="text-muted text-xs">$100 deposit to book</p>
+                  </div>
+                  <p className="text-[#555] text-xs leading-relaxed">Detailed forearm pieces, portraits, animals, medium geometric work</p>
+                </div>
+                <div className="border border-border p-5 flex flex-col gap-3">
+                  <p className="text-gold text-xs tracking-widest uppercase">Full Day</p>
+                  <div>
+                    <p className="text-cream text-2xl font-light">$800–1,000</p>
+                    <p className="text-muted text-xs mt-0.5">estimated</p>
+                  </div>
+                  <div className="border-t border-border pt-3 flex flex-col gap-1.5">
+                    <p className="text-muted text-xs">6+ hours</p>
+                    <p className="text-muted text-xs">$100 deposit to book</p>
+                  </div>
+                  <p className="text-[#555] text-xs leading-relaxed">Full inner/outer arm, upper arm, large back pieces, chest pieces, full thigh pieces</p>
+                </div>
+                <div className="border border-border p-5 flex flex-col gap-3">
+                  <p className="text-gold text-xs tracking-widest uppercase">Full Sleeve</p>
+                  <div>
+                    <p className="text-cream text-2xl font-light">$800–1,000</p>
+                    <p className="text-muted text-xs mt-0.5">per session</p>
+                  </div>
+                  <div className="border-t border-border pt-3 flex flex-col gap-1.5">
+                    <p className="text-muted text-xs">4–5 full day sessions</p>
+                    <p className="text-muted text-xs">$100 deposit per session</p>
+                  </div>
+                  <p className="text-[#555] text-xs leading-relaxed">Discounts may be available — Miguel will discuss directly during your consultation.</p>
+                </div>
+              </>
+            ) : (
+              artist.pricing!.map((tier) => (
+                <div key={tier.label} className="border border-border p-5 flex flex-col gap-3">
+                  <p className="text-gold text-xs tracking-widest uppercase">{tier.label}</p>
+                  <div>
+                    <p className="text-cream text-2xl font-light">{tier.price}</p>
+                    {tier.hours && <p className="text-muted text-xs mt-0.5">{tier.hours}</p>}
+                  </div>
+                  {tier.deposit && (
+                    <div className="border-t border-border pt-3">
+                      <p className="text-muted text-xs">{tier.deposit} deposit to book</p>
+                    </div>
+                  )}
+                  {tier.description && (
+                    <p className="text-[#555] text-xs leading-relaxed">{tier.description}</p>
+                  )}
+                </div>
+              ))
+            )}
           </div>
 
           <p data-reveal data-reveal-delay="80" className="text-[#444] text-xs mt-8">
@@ -260,15 +287,18 @@ export default async function ArtistPage({
             Deposits are applied to the total cost of your tattoo.
           </p>
 
-          <div data-reveal data-reveal-delay="120">
-            <PaymentGrid />
-          </div>
+          {artist.slug === "miguel" && (
+            <div data-reveal data-reveal-delay="120">
+              <PaymentGrid />
+            </div>
+          )}
         </div>
       </section>
+      ) : null}
 
       {/* Booking + Calendar */}
       <div id="book">
-        <BookingSection />
+        <BookingSection availableDates={artist.availableDates} />
       </div>
 
       <ScrollReveal />
@@ -279,10 +309,14 @@ export default async function ArtistPage({
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
             <span className="text-cream font-semibold tracking-widest text-sm uppercase">inkbook</span>
-            <p className="text-[#444] text-xs mt-1">© 2026 Miguel · Austin, TX</p>
+            <p className="text-[#444] text-xs mt-1">© 2026 {artist.name} · {artist.location}</p>
           </div>
           <div className="flex gap-6 text-xs text-muted">
-            <a href={artist.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-cream transition-colors">@miguel_tattoos</a>
+            {artist.instagram && (
+              <a href={artist.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-cream transition-colors">
+                {artist.instagram.includes("instagram.com") ? `@${artist.instagram.split("/").filter(Boolean).pop()}` : artist.instagram}
+              </a>
+            )}
             <a href="#book" className="hover:text-cream transition-colors">Book a Consultation</a>
           </div>
         </div>

@@ -1,20 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ProfileForm } from "./ProfileForm";
+import { AvailabilityPicker } from "./AvailabilityPicker";
 
 export const metadata: Metadata = {
-  title: "Set up your profile — inkbook",
+  title: "Set your availability — inkbook",
 };
 
-export default async function ProfilePage({
+export default async function AvailabilityPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ plan?: string }>;
 }) {
   const { slug } = await params;
-  const { plan = "free" } = await searchParams;
 
   return (
     <main className="bg-black min-h-screen flex flex-col">
@@ -26,15 +23,15 @@ export default async function ProfilePage({
 
       <div className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-lg">
-          <p className="text-[10px] tracking-[0.45em] uppercase text-muted mb-4">Step 3 of 6</p>
+          <p className="text-[10px] tracking-[0.45em] uppercase text-muted mb-4">Step 6 of 6</p>
           <h1 className="text-3xl md:text-4xl font-light text-cream mb-2">
-            Set up your profile.
+            Set your availability.
           </h1>
           <p className="text-muted text-sm font-light mb-10 leading-relaxed">
-            This is what clients see when they visit your booking page.
+            Click dates to mark when you&apos;re open for bookings. Clients will see these highlighted on your profile. You can update this anytime.
           </p>
 
-          <ProfileForm slug={slug} plan={plan} />
+          <AvailabilityPicker slug={slug} />
         </div>
       </div>
     </main>
