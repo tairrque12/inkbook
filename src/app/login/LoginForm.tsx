@@ -33,7 +33,7 @@ export function LoginForm() {
       if (!data.onboarding_complete) {
         router.push(`/onboarding/${data.slug}/plan`);
       } else {
-        router.push(`/${data.slug}`);
+        router.push(`/dashboard/${data.slug}`);
       }
     } catch {
       setError("Network error. Please try again.");

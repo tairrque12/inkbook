@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createSessionToken } from "@/lib/admin-auth";
+
+const SESSION_COOKIE = "inkbook-session";
+const TTL_SECONDS = 24 * 60 * 60;
 
 export async function POST(req: NextRequest) {
   let body: { email?: string; password?: string };
@@ -52,5 +56,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ slug: artist.slug, onboarding_complete: false });
   }
 
-  return NextResponse.json({ slug: artist.slug, onboarding_complete: true });
+  // Set a session cookie so the dashboard can verify identity
+  const token = await createSessionToken(artist.slug);
+  const res = NextResponse.json({ slug: artist.slug, onboarding_complete: true });
+  res.cookies.set(`${SESSION_COOKIE}-${artist.slug}`, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: TTL_SECONDS,
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  return res;
 }

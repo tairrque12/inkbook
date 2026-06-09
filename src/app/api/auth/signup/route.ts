@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createSessionToken } from "@/lib/admin-auth";
+
+const SESSION_COOKIE = "inkbook-session";
+const TTL_SECONDS = 24 * 60 * 60;
 
 function getAdminClient() {
   const url = process.env.SUPABASE_URL;
@@ -70,5 +74,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to create profile. Please try again." }, { status: 500 });
   }
 
-  return NextResponse.json({ slug: cleanSlug }, { status: 201 });
+  const token = await createSessionToken(cleanSlug);
+  const res = NextResponse.json({ slug: cleanSlug }, { status: 201 });
+  res.cookies.set(`${SESSION_COOKIE}-${cleanSlug}`, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: TTL_SECONDS,
+    secure: process.env.NODE_ENV === "production",
+  });
+  return res;
 }
