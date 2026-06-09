@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { getArtist } from "@/lib/mock-artists";
 import { BookingSection } from "./BookingSection";
 import { PaymentGrid } from "./PaymentGrid";
@@ -20,9 +21,9 @@ export default async function ArtistPage({
     <main className="bg-black min-h-screen">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-5 border-b border-border">
-        <span className="text-cream font-semibold tracking-widest text-sm uppercase">
+        <Link href="/" className="text-cream font-semibold tracking-widest text-sm uppercase hover:opacity-70 transition-opacity">
           inkbook
-        </span>
+        </Link>
         <a
           href="#book"
           className="h-10 px-5 border border-cream text-cream text-xs tracking-widest uppercase hover:bg-cream hover:text-black transition-colors flex items-center"
