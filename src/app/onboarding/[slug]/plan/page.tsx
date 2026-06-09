@@ -18,6 +18,7 @@ const PRO_FEATURES = [
   "Client dashboard",
   "Priority support",
   "AI booking agent — handles client chats & bookings for you",
+  "Tattoo visualizer — customers preview your art on their body before the appointment",
 ];
 
 export default function PlanPage() {
@@ -96,13 +97,20 @@ export default function PlanPage() {
                 {PRO_FEATURES.map((f) => (
                   <div key={f} className="flex items-start gap-3">
                     <span className="text-gold text-xs shrink-0 mt-0.5">✓</span>
-                    <span className={`text-sm leading-snug ${f.startsWith("AI") ? "text-cream" : "text-muted"}`}>
+                    <span className="text-sm leading-snug">
                       {f.startsWith("AI") ? (
                         <>
                           <span className="text-gold">AI booking agent</span>
                           <span className="text-muted"> — handles client chats &amp; bookings for you</span>
                         </>
-                      ) : f}
+                      ) : f.startsWith("Tattoo") ? (
+                        <>
+                          <span className="text-gold">Tattoo visualizer</span>
+                          <span className="text-muted"> — customers preview your art on their body before the appointment</span>
+                        </>
+                      ) : (
+                        <span className="text-muted">{f}</span>
+                      )}
                     </span>
                   </div>
                 ))}
