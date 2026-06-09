@@ -49,7 +49,7 @@ export default function LandingPage() {
           inkbook
         </span>
         <a
-          href="#waitlist"
+          href="/signup"
           className="h-10 px-5 border border-cream text-cream text-xs tracking-widest uppercase hover:bg-cream hover:text-black transition-colors flex items-center"
         >
           Get started free
@@ -80,7 +80,7 @@ export default function LandingPage() {
           </div>
           <div className="hero-line-4 flex flex-wrap items-center gap-4">
             <a
-              href="#waitlist"
+              href="/signup"
               className="inline-flex items-center h-12 px-8 bg-cream text-black text-[11px] tracking-widest uppercase hover:bg-cream/90 transition-colors font-semibold"
             >
               Get started free
@@ -171,7 +171,7 @@ export default function LandingPage() {
               </div>
 
               <a
-                href="#waitlist"
+                href="/signup"
                 className="mt-auto inline-flex items-center justify-center h-11 border border-cream/40 text-cream text-[11px] tracking-widest uppercase hover:bg-cream hover:text-black transition-colors"
               >
                 Get started free
@@ -208,7 +208,7 @@ export default function LandingPage() {
               </div>
 
               <a
-                href="#waitlist"
+                href="/signup"
                 className="mt-auto inline-flex items-center justify-center h-11 bg-gold text-black text-[11px] tracking-widest uppercase hover:bg-gold/90 transition-colors font-semibold"
               >
                 Join waitlist
