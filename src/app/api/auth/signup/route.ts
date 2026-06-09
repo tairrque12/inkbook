@@ -14,6 +14,16 @@ function getAdminClient() {
 
 const RESERVED_SLUGS = new Set(["admin", "api", "signup", "login", "welcome", "miguel"]);
 
+export async function GET(req: NextRequest) {
+  const slug = req.nextUrl.searchParams.get("slug")?.trim().toLowerCase() ?? "";
+  if (!slug || !/^[a-z0-9-]+$/.test(slug) || RESERVED_SLUGS.has(slug)) {
+    return NextResponse.json({ available: false });
+  }
+  const db = getAdminClient();
+  const { data } = await db.from("artists").select("slug").eq("slug", slug).single();
+  return NextResponse.json({ available: !data });
+}
+
 export async function POST(req: NextRequest) {
   let body: { name?: string; slug?: string; email?: string; password?: string };
   try {

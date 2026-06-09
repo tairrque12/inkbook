@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getPendingPortfolioFiles, clearPendingPortfolioFiles } from "@/lib/onboarding-store";
 
 const MONTH_NAMES = [
   "January","February","March","April","May","June",
@@ -79,6 +80,7 @@ export function AvailabilityPicker({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [statusMsg, setStatusMsg] = useState("");
 
   function toggleDate(date: string) {
     setSelected((prev) => {
@@ -95,27 +97,130 @@ export function AvailabilityPicker({ slug }: { slug: string }) {
     return { year: d.getFullYear(), month: d.getMonth() };
   });
 
-  async function handleSave() {
+  async function handleCreateAccount() {
     setSaving(true);
     setError("");
 
+    // 1. Read all pending data from sessionStorage
+    const signupRaw = sessionStorage.getItem("inkbook_signup");
+    const profileRaw = sessionStorage.getItem("inkbook_profile");
+    const pricingRaw = sessionStorage.getItem("inkbook_pricing");
+
+    if (!signupRaw) {
+      setError("Session expired. Please start over from the signup page.");
+      setSaving(false);
+      router.push("/signup");
+      return;
+    }
+
+    let signupData: { name: string; slug: string; email: string; password: string };
+    let profileData: { location: string; bio: string; instagram: string; styles: string[]; plan: string } | null = null;
+    let pricingData: { tiers: unknown[] } | null = null;
+
     try {
-      const res = await fetch(`/api/artists/${slug}`, {
+      signupData = JSON.parse(signupRaw);
+      if (profileRaw) profileData = JSON.parse(profileRaw);
+      if (pricingRaw) pricingData = JSON.parse(pricingRaw);
+    } catch {
+      setError("Something went wrong reading your setup data. Please start over.");
+      setSaving(false);
+      return;
+    }
+
+    // 2. Create the account
+    setStatusMsg("Creating your account…");
+    const signupRes = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(signupData),
+    });
+
+    const signupJson = await signupRes.json();
+
+    if (!signupRes.ok) {
+      setError(signupJson.error ?? "Failed to create account. Please try again.");
+      setSaving(false);
+      setStatusMsg("");
+      return;
+    }
+
+    const artistSlug = signupJson.slug as string;
+
+    // 3. Save profile + availability in one PATCH
+    setStatusMsg("Saving your profile…");
+    const profilePatch: Record<string, unknown> = {
+      onboarding_complete: true,
+      available_dates: Array.from(selected),
+    };
+    if (profileData) {
+      profilePatch.location = profileData.location;
+      profilePatch.bio = profileData.bio;
+      profilePatch.instagram = profileData.instagram;
+      profilePatch.styles = profileData.styles;
+      profilePatch.plan = profileData.plan;
+    }
+    await fetch(`/api/artists/${artistSlug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profilePatch),
+    });
+
+    // 4. Save pricing if present
+    if (pricingData?.tiers?.length) {
+      await fetch(`/api/artists/${artistSlug}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ available_dates: Array.from(selected) }),
+        body: JSON.stringify({ pricing: pricingData.tiers }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Something went wrong.");
-        return;
-      }
-      router.push(`/dashboard/${slug}`);
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setSaving(false);
     }
+
+    // 5. Upload portfolio files if any
+    const portfolioFiles = getPendingPortfolioFiles();
+    if (portfolioFiles.length > 0) {
+      setStatusMsg(`Uploading ${portfolioFiles.length} portfolio photo${portfolioFiles.length !== 1 ? "s" : ""}…`);
+      const uploadedUrls: string[] = [];
+      for (const file of portfolioFiles) {
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          const res = await fetch(`/api/artists/${artistSlug}/portfolio`, {
+            method: "POST",
+            body: formData,
+          });
+          if (res.ok) {
+            const data = await res.json();
+            uploadedUrls.push(data.url);
+          }
+        } catch {
+          // Best-effort — skip failed uploads
+        }
+      }
+
+      if (uploadedUrls.length > 0) {
+        const portfolio = uploadedUrls.map((imageUrl, idx) => ({
+          id: `p${Date.now()}-${idx}`,
+          imageUrl,
+        }));
+        await fetch(`/api/artists/${artistSlug}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ portfolio }),
+        });
+      }
+    }
+
+    // 6. Clear all pending data
+    sessionStorage.removeItem("inkbook_signup");
+    sessionStorage.removeItem("inkbook_profile");
+    sessionStorage.removeItem("inkbook_pricing");
+    clearPendingPortfolioFiles();
+
+    router.push(`/dashboard/${artistSlug}`);
+  }
+
+  async function handleSkip() {
+    // Still need to create the account even if they skip availability
+    await handleCreateAccount();
   }
 
   return (
@@ -150,24 +255,27 @@ export function AvailabilityPicker({ slug }: { slug: string }) {
         ))}
       </div>
 
-      {error && <p className="text-red-400 text-xs">{error}</p>}
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {statusMsg && !error && (
+        <p className="text-muted text-sm">{statusMsg}</p>
+      )}
 
       <div className="flex flex-col gap-3 pt-2">
         <button
           type="button"
-          onClick={handleSave}
+          onClick={handleCreateAccount}
           disabled={saving}
           className="h-12 bg-cream text-black text-[11px] tracking-widest uppercase font-semibold hover:bg-cream/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {saving ? "Saving…" : "Go to my dashboard →"}
+          {saving ? statusMsg || "Creating your account…" : "Create my account →"}
         </button>
         <button
           type="button"
-          onClick={() => router.push(`/dashboard/${slug}`)}
+          onClick={handleSkip}
           disabled={saving}
           className="h-10 text-muted text-xs tracking-wider uppercase hover:text-cream transition-colors"
         >
-          Skip for now
+          Skip availability for now
         </button>
       </div>
     </div>

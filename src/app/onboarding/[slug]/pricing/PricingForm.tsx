@@ -24,8 +24,6 @@ const TIER_PRESETS = ["Small", "Half Day", "Full Day", "Full Sleeve"];
 export function PricingForm({ slug, plan }: { slug: string; plan: string }) {
   const router = useRouter();
   const [tiers, setTiers] = useState<PricingTier[]>([{ ...DEFAULT_TIER }]);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
 
   function addTier() {
     if (tiers.length >= 4) return;
@@ -42,36 +40,18 @@ export function PricingForm({ slug, plan }: { slug: string; plan: string }) {
     );
   }
 
-  async function handleSave() {
+  function handleContinue() {
     const filled = tiers.filter((t) => t.label.trim() && t.price.trim());
-    if (filled.length === 0) {
-      handleSkip();
-      return;
+    if (filled.length > 0) {
+      sessionStorage.setItem("inkbook_pricing", JSON.stringify({ tiers: filled }));
+    } else {
+      sessionStorage.removeItem("inkbook_pricing");
     }
-
-    setSaving(true);
-    setError("");
-
-    try {
-      const res = await fetch(`/api/artists/${slug}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pricing: filled }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Something went wrong.");
-        return;
-      }
-      router.push(`/onboarding/${slug}/availability?plan=${plan}`);
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setSaving(false);
-    }
+    router.push(`/onboarding/${slug}/availability?plan=${plan}`);
   }
 
   function handleSkip() {
+    sessionStorage.removeItem("inkbook_pricing");
     router.push(`/onboarding/${slug}/availability?plan=${plan}`);
   }
 
@@ -166,21 +146,17 @@ export function PricingForm({ slug, plan }: { slug: string; plan: string }) {
         </button>
       )}
 
-      {error && <p className="text-red-400 text-xs">{error}</p>}
-
       <div className="flex flex-col gap-3 pt-2">
         <button
           type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="h-12 bg-cream text-black text-[11px] tracking-widest uppercase font-semibold hover:bg-cream/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={handleContinue}
+          className="h-12 bg-cream text-black text-[11px] tracking-widest uppercase font-semibold hover:bg-cream/90 transition-colors"
         >
-          {saving ? "Saving…" : "Save & continue →"}
+          Continue →
         </button>
         <button
           type="button"
           onClick={handleSkip}
-          disabled={saving}
           className="h-10 text-muted text-xs tracking-wider uppercase hover:text-cream transition-colors"
         >
           Skip for now

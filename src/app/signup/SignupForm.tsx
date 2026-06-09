@@ -20,6 +20,8 @@ export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+  const [slugChecking, setSlugChecking] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Auto-derive slug from name until user edits it manually
@@ -27,31 +29,50 @@ export function SignupForm() {
     if (!slugTouched) setSlug(slugify(name));
   }, [name, slugTouched]);
 
+  // Debounced slug availability check
+  useEffect(() => {
+    if (!slug) {
+      setSlugAvailable(null);
+      return;
+    }
+    setSlugChecking(true);
+    setSlugAvailable(null);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/auth/signup?slug=${encodeURIComponent(slug)}`);
+        const data = await res.json();
+        setSlugAvailable(data.available ?? false);
+      } catch {
+        setSlugAvailable(null);
+      } finally {
+        setSlugChecking(false);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [slug]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (slugAvailable === false) {
+      setError("That booking URL is already taken. Please choose another.");
+      return;
+    }
+    if (!slugAvailable) {
+      setError("Please wait for the URL check to finish.");
+      return;
+    }
+
     setLoading(true);
 
-    try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, email, password }),
-      });
+    // Store credentials in sessionStorage — account is created at the END of onboarding
+    sessionStorage.setItem(
+      "inkbook_signup",
+      JSON.stringify({ name, slug, email, password })
+    );
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Please try again.");
-        return;
-      }
-
-      router.push(`/onboarding/${data.slug}/plan`);
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    router.push(`/onboarding/${slug}/plan`);
   }
 
   const baseUrl =
@@ -94,14 +115,21 @@ export function SignupForm() {
               setSlugTouched(true);
               setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
             }}
-            className="pl-[calc(theme(spacing.4)+var(--prefix-width,5.5rem))]"
             style={{ paddingLeft: `calc(1rem + ${baseUrl.length + 1}ch)` }}
             placeholder="miguel-torres"
           />
         </div>
         {slug && (
-          <p className="text-[10px] text-muted mt-1.5">
-            {baseUrl}/{slug}
+          <p className="text-[10px] mt-1.5">
+            {slugChecking ? (
+              <span className="text-muted">Checking availability…</span>
+            ) : slugAvailable === true ? (
+              <span className="text-green-500">✓ {baseUrl}/{slug} is available</span>
+            ) : slugAvailable === false ? (
+              <span className="text-red-400">✗ That URL is already taken</span>
+            ) : (
+              <span className="text-muted">{baseUrl}/{slug}</span>
+            )}
           </p>
         )}
       </div>
@@ -143,11 +171,15 @@ export function SignupForm() {
 
       <button
         type="submit"
-        disabled={loading || !slug}
+        disabled={loading || !slug || slugAvailable === false || slugChecking}
         className="h-12 bg-cream text-black text-[11px] tracking-widest uppercase font-semibold hover:bg-cream/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {loading ? "Creating your account…" : "Create my account"}
+        {loading ? "One moment…" : "Continue →"}
       </button>
+
+      <p className="text-[10px] text-muted text-center">
+        Your account is created at the end of setup.
+      </p>
     </form>
   );
 }

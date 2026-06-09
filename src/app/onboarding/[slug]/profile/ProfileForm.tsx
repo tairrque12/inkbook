@@ -16,7 +16,6 @@ export function ProfileForm({ slug, plan }: { slug: string; plan: string }) {
   const [instagram, setInstagram] = useState("");
   const [styles, setStyles] = useState<string[]>([]);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   function toggleStyle(style: string) {
     setStyles((prev) =>
@@ -24,34 +23,20 @@ export function ProfileForm({ slug, plan }: { slug: string; plan: string }) {
     );
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (styles.length === 0) {
       setError("Select at least one style.");
       return;
     }
     setError("");
-    setLoading(true);
 
-    try {
-      const res = await fetch(`/api/artists/${slug}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ location, bio, instagram, styles, plan, onboarding_complete: true }),
-      });
+    sessionStorage.setItem(
+      "inkbook_profile",
+      JSON.stringify({ location, bio, instagram, styles, plan })
+    );
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Something went wrong.");
-        return;
-      }
-
-      router.push(`/onboarding/${slug}/portfolio?plan=${plan}`);
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    router.push(`/onboarding/${slug}/portfolio?plan=${plan}`);
   }
 
   return (
@@ -128,10 +113,9 @@ export function ProfileForm({ slug, plan }: { slug: string; plan: string }) {
 
       <button
         type="submit"
-        disabled={loading}
-        className="h-12 bg-cream text-black text-[11px] tracking-widest uppercase font-semibold hover:bg-cream/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="h-12 bg-cream text-black text-[11px] tracking-widest uppercase font-semibold hover:bg-cream/90 transition-colors"
       >
-        {loading ? "Saving your profile…" : "Finish setup"}
+        Continue →
       </button>
     </form>
   );
