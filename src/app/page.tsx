@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { WaitlistForm } from "./WaitlistForm";
 import { SearchArtists } from "./SearchArtists";
+import { ProWaitlistCard } from "./ProWaitlistCard";
 
 export const metadata: Metadata = {
   title: "inkbook — Booking pages for tattoo artists",
@@ -34,12 +35,6 @@ const FREE_FEATURES = [
   "Email notifications",
 ];
 
-const PRO_FEATURES = [
-  "Everything in Free",
-  "Direct Stripe deposit collection",
-  "Client dashboard",
-  "Priority support",
-];
 
 export default function LandingPage() {
   return (
@@ -183,41 +178,7 @@ export default function LandingPage() {
             </div>
 
             {/* Pro */}
-            <div className="border border-gold/40 p-8 flex flex-col gap-6 relative">
-              <div className="absolute top-5 right-5">
-                <span className="text-[9px] tracking-widest uppercase bg-gold/10 text-gold px-3 py-1.5 border border-gold/20">
-                  Popular
-                </span>
-              </div>
-
-              <div>
-                <p className="text-[10px] tracking-widest uppercase text-gold mb-3">
-                  Pro
-                </p>
-                <div className="flex items-end gap-1.5">
-                  <p className="text-cream font-light" style={{ fontSize: "clamp(2.5rem, 6vw, 3.5rem)" }}>
-                    $19
-                  </p>
-                  <p className="text-muted text-sm mb-2">/mo</p>
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-6 flex flex-col gap-3.5">
-                {PRO_FEATURES.map((f) => (
-                  <div key={f} className="flex items-center gap-3">
-                    <span className="text-gold text-xs shrink-0">✓</span>
-                    <span className="text-muted text-sm">{f}</span>
-                  </div>
-                ))}
-              </div>
-
-              <Link
-                href="/signup"
-                className="mt-auto inline-flex items-center justify-center h-11 bg-gold text-black text-[11px] tracking-widest uppercase hover:bg-gold/90 transition-colors font-semibold"
-              >
-                Join waitlist
-              </Link>
-            </div>
+            <ProWaitlistCard />
           </div>
         </div>
       </section>
