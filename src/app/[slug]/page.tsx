@@ -8,6 +8,8 @@ import { PaymentGrid } from "./PaymentGrid";
 import { ScrollReveal } from "./ScrollReveal";
 import { StickyHeader } from "./StickyHeader";
 
+export const dynamic = "force-dynamic";
+
 async function getArtistProfile(slug: string): Promise<ArtistProfile | undefined> {
   // Try Supabase first
   const url = process.env.SUPABASE_URL;

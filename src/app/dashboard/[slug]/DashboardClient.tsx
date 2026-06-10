@@ -5,8 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AvailabilityEditor } from "./AvailabilityEditor";
 import { PricingEditor } from "./PricingEditor";
+import { PortfolioEditor } from "./PortfolioEditor";
 
-type Tab = "availability" | "pricing" | "account";
+type Tab = "portfolio" | "availability" | "pricing" | "account";
+
+interface PortfolioItem {
+  id: string;
+  imageUrl: string;
+}
 
 interface Props {
   slug: string;
@@ -14,6 +20,7 @@ interface Props {
   plan: string;
   initialPricing: PricingTier[];
   initialAvailableDates: string[];
+  initialPortfolio: PortfolioItem[];
 }
 
 interface PricingTier {
@@ -24,9 +31,9 @@ interface PricingTier {
   description: string;
 }
 
-export function DashboardClient({ slug, name, plan, initialPricing, initialAvailableDates }: Props) {
+export function DashboardClient({ slug, name, plan, initialPricing, initialAvailableDates, initialPortfolio }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("availability");
+  const [tab, setTab] = useState<Tab>("portfolio");
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -63,6 +70,7 @@ export function DashboardClient({ slug, name, plan, initialPricing, initialAvail
   }
 
   const tabs: { id: Tab; label: string }[] = [
+    { id: "portfolio", label: "Portfolio" },
     { id: "availability", label: "Availability" },
     { id: "pricing", label: "Pricing" },
     { id: "account", label: "Account" },
@@ -125,6 +133,10 @@ export function DashboardClient({ slug, name, plan, initialPricing, initialAvail
 
       {/* Tab content */}
       <div className="px-6 py-10 max-w-3xl mx-auto">
+        {tab === "portfolio" && (
+          <PortfolioEditor slug={slug} initialItems={initialPortfolio} />
+        )}
+
         {tab === "availability" && (
           <AvailabilityEditor slug={slug} initialDates={initialAvailableDates} />
         )}

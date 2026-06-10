@@ -6,6 +6,11 @@ import { DashboardClient } from "./DashboardClient";
 
 const SESSION_COOKIE = "inkbook-session";
 
+interface PortfolioItem {
+  id: string;
+  imageUrl: string;
+}
+
 interface ArtistRow {
   id: string;
   slug: string;
@@ -13,6 +18,7 @@ interface ArtistRow {
   plan: string | null;
   pricing: PricingTier[] | null;
   available_dates: string[] | null;
+  portfolio: PortfolioItem[] | null;
 }
 
 interface PricingTier {
@@ -46,7 +52,7 @@ export default async function DashboardPage({
   const db = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: artist } = await db
     .from("artists")
-    .select("id, slug, name, plan, pricing, available_dates")
+    .select("id, slug, name, plan, pricing, available_dates, portfolio")
     .eq("slug", slug)
     .single<ArtistRow>();
 
@@ -59,6 +65,7 @@ export default async function DashboardPage({
       plan={artist.plan ?? "free"}
       initialPricing={artist.pricing ?? []}
       initialAvailableDates={artist.available_dates ?? []}
+      initialPortfolio={artist.portfolio ?? []}
     />
   );
 }
