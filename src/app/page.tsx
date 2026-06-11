@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { WaitlistForm } from "./WaitlistForm";
+import { FeatureRequestForm } from "./FeatureRequestForm";
 import { SearchArtists } from "./SearchArtists";
 import { ProWaitlistCard } from "./ProWaitlistCard";
 
@@ -183,20 +183,21 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Waitlist */}
-      <section id="waitlist" className="py-24 px-6 md:px-16 border-b border-border">
-        <div className="max-w-md mx-auto">
+      {/* Feature Request */}
+      <section id="feedback" className="py-24 px-6 md:px-16 border-b border-border">
+        <div className="max-w-lg mx-auto">
           <p className="text-xs tracking-[0.2em] uppercase text-muted mb-3">
-            Early access
+            Shape inkbook
           </p>
           <h2 className="text-3xl md:text-4xl font-light text-cream mb-4">
-            Get early access.
+            What do you wish you had?
           </h2>
           <p className="text-muted text-sm mb-12 font-light leading-relaxed">
-            ink-book is in private beta. Drop your info and we&apos;ll reach out
-            when your spot is ready.
+            We&apos;re building inkbook for tattoo artists — and we want to hear
+            from you. What tools would make your life easier? What&apos;s
+            missing from the platforms you use now?
           </p>
-          <WaitlistForm />
+          <FeatureRequestForm />
         </div>
       </section>
 
