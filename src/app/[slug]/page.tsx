@@ -146,7 +146,7 @@ export default async function ArtistPage({
           <div data-reveal data-reveal-delay="80" className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
             {artist.portfolio.map((item) => (
               <div key={item.id} className="group relative">
-                <div className="aspect-[3/4] w-full relative overflow-hidden bg-zinc-900">
+                <div className="aspect-[4/5] w-full relative overflow-hidden bg-zinc-900">
                   <Image
                     src={item.imageUrl}
                     alt={item.title ?? "Portfolio piece"}
@@ -238,13 +238,16 @@ export default async function ArtistPage({
                   </div>
                   <p className="text-[#555] text-xs leading-relaxed">Detailed forearm pieces, portraits, animals, medium geometric work</p>
                 </div>
-                <div className="border border-border p-5 flex flex-col gap-3">
+                <div className="border-2 border-gold/60 p-5 flex flex-col gap-3 relative bg-gold/5">
+                  <span className="absolute -top-3 left-4 bg-gold text-black text-[9px] tracking-widest uppercase px-2 py-1 font-semibold">
+                    Most Requested
+                  </span>
                   <p className="text-gold text-xs tracking-widest uppercase">Full Day</p>
                   <div>
                     <p className="text-cream text-2xl font-light">$800–1,000</p>
                     <p className="text-muted text-xs mt-0.5">estimated</p>
                   </div>
-                  <div className="border-t border-border pt-3 flex flex-col gap-1.5">
+                  <div className="border-t border-gold/20 pt-3 flex flex-col gap-1.5">
                     <p className="text-muted text-xs">6+ hours</p>
                     <p className="text-muted text-xs">$100 deposit to book</p>
                   </div>
