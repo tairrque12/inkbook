@@ -147,7 +147,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Free */}
-            <div className="border border-border p-8 flex flex-col gap-6 hover:border-cream/40 transition-colors">
+            <div className="border border-border p-8 flex flex-col gap-6 hover:border-cream/40 hover:bg-cream/5 transition-colors">
               <div>
                 <p className="text-[10px] tracking-widest uppercase text-muted mb-3">
                   Free
