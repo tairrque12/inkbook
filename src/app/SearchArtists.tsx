@@ -70,12 +70,12 @@ export function SearchArtists() {
         ) : results.length === 0 ? (
           <p className="text-muted text-sm">No artists found{query ? ` for "${query}"` : ""}.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-border">
+          <div className={`grid grid-cols-1 ${results.length > 1 ? "md:grid-cols-2 lg:grid-cols-3 gap-px bg-border" : ""}`}>
             {results.map((artist) => (
               <Link
                 key={artist.slug}
                 href={`/${artist.slug}`}
-                className="bg-black p-6 flex flex-col gap-3 hover:bg-[#0a0a0a] transition-colors group"
+                className={`p-6 flex flex-col gap-3 hover:bg-[#0a0a0a] transition-colors group ${results.length > 1 ? "bg-black" : "border border-border"}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
