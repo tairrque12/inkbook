@@ -23,7 +23,7 @@ export function ProWaitlistCard() {
   }
 
   return (
-    <div className="border border-gold/40 p-8 flex flex-col gap-6 relative">
+    <div className="border border-gold/40 p-8 flex flex-col gap-6 relative h-full bg-card">
       <div className="absolute top-5 right-5">
         <span className="text-[9px] tracking-widest uppercase bg-gold/10 text-gold px-3 py-1.5 border border-gold/20">
           Coming Soon

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FeatureRequestForm } from "./FeatureRequestForm";
 import { SearchArtists } from "./SearchArtists";
 import { ProWaitlistCard } from "./ProWaitlistCard";
+import { Tilt3D } from "./Tilt3D";
 
 export const metadata: Metadata = {
   title: "inkbook — Booking pages for tattoo artists",
@@ -145,9 +146,10 @@ export default function LandingPage() {
             Start free. Upgrade when you&apos;re ready to take deposits.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ perspective: "1000px" }}>
             {/* Free */}
-            <div className="border border-border p-8 flex flex-col gap-6">
+            <Tilt3D>
+            <div className="border border-border p-8 flex flex-col gap-6 h-full bg-card">
               <div>
                 <p className="text-[10px] tracking-widest uppercase text-muted mb-3">
                   Free
@@ -176,9 +178,12 @@ export default function LandingPage() {
                 Get started free
               </Link>
             </div>
+            </Tilt3D>
 
             {/* Pro */}
-            <ProWaitlistCard />
+            <Tilt3D>
+              <ProWaitlistCard />
+            </Tilt3D>
           </div>
         </div>
       </section>
