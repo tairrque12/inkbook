@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FeatureRequestForm } from "./FeatureRequestForm";
 import { SearchArtists } from "./SearchArtists";
 import { ProWaitlistCard } from "./ProWaitlistCard";
+import { UserNav } from "./UserNav";
 
 export const metadata: Metadata = {
   title: "inkbook — Booking pages for tattoo artists",
@@ -44,12 +45,7 @@ export default function LandingPage() {
         <span className="text-cream font-semibold tracking-widest text-sm uppercase">
           inkbook
         </span>
-        <Link
-          href="/signup"
-          className="h-10 px-5 border border-cream text-cream text-xs tracking-widest uppercase hover:bg-cream hover:text-black transition-colors flex items-center"
-        >
-          Get started free
-        </Link>
+        <UserNav />
       </nav>
 
       {/* Hero */}
